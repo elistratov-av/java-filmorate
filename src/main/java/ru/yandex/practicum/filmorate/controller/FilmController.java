@@ -23,6 +23,7 @@ import java.util.Map;
 @RequestMapping("/films")
 public class FilmController {
     private final Map<Integer, Film> films = new HashMap<>();
+    private static final LocalDate MOVIE_BIRTHDAY = LocalDate.of(1895, Month.DECEMBER, 28);
 
     @GetMapping
     public Collection<Film> findAll() {
@@ -68,8 +69,6 @@ public class FilmController {
                 .orElse(0);
         return ++currentMaxId;
     }
-
-    private static final LocalDate MOVIE_BIRTHDAY = LocalDate.of(1895, Month.DECEMBER, 28);
 
     private static void validate(Film film, final boolean checkId) {
         try {
