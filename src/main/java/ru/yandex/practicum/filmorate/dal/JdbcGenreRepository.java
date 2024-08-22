@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.dal;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcOperations;
 import org.springframework.stereotype.Repository;
@@ -36,10 +37,16 @@ public class JdbcGenreRepository implements GenreRepository {
     // endregion
 
     @Override
-    public Optional<Genre> get(int id) {
-        return Optional.ofNullable(jdbc.queryForObject(GET_BY_ID_QUERY,
-                new MapSqlParameterSource("id", id),
-                JdbcGenreRepository::mapRowTo));
+    public Optional<Genre> get(Integer id) {
+        try {
+            if (id == null) return Optional.empty();
+
+            return Optional.ofNullable(jdbc.queryForObject(GET_BY_ID_QUERY,
+                    new MapSqlParameterSource("id", id),
+                    JdbcGenreRepository::mapRowTo));
+        } catch (EmptyResultDataAccessException ignored) {
+            return Optional.empty();
+        }
     }
 
     @Override

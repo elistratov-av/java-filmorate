@@ -1,10 +1,10 @@
 {
   "info": {
-    "_postman_id": "c48e59d5-4de8-4757-a8c4-c13e763036df",
-    "name": "add-friends-likes",
+    "_postman_id": "8ed6b8f0-1e77-445f-8736-87dd5f364b51",
+    "name": "add-database",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "23073145",
-    "_collection_link": "https://universal-shadow-295426.postman.co/workspace/My-Workspace~4200f6aa-0504-44b1-8a1d-707d0dcbd5ce/collection/23073145-c48e59d5-4de8-4757-a8c4-c13e763036df?action=share&source=collection_link&creator=23073145"
+    "_collection_link": "https://universal-shadow-295426.postman.co/workspace/My-Workspace~4200f6aa-0504-44b1-8a1d-707d0dcbd5ce/collection/23073145-8ed6b8f0-1e77-445f-8736-87dd5f364b51?action=share&source=collection_link&creator=23073145"
   },
   "item": [
     {
@@ -296,6 +296,7 @@
               "script": {
                 "exec": [
                   "const source = pm.collectionVariables.get(\"user\")\r",
+                  "const new_user_info = pm.collectionVariables.get(\"new_user_info\");\r",
                   "\r",
                   "pm.test(\"Status code is 200\", function () {\r",
                   "    pm.response.to.be.ok;\r",
@@ -312,22 +313,22 @@
                   "pm.test(\"Test user 'email' field\", function () {\r",
                   "    var jsonData = pm.response.json();\r",
                   "    pm.expect(jsonData).to.have.property('email');\r",
-                  "    pm.expect(jsonData.email, '\"email\" must be \"mail@yandex.ru\"').to.eql('mail@yandex.ru');\r",
+                  "    pm.expect(jsonData.email, `\"email\" must be \"${new_user_info.email}\"`).to.eql(new_user_info.email);\r",
                   "});\r",
                   "pm.test(\"Test user 'name' field\", function () {\r",
                   "    var jsonData = pm.response.json();\r",
                   "    pm.expect(jsonData).to.have.property('name');\r",
-                  "    pm.expect(jsonData.name, '\"name\" must be \"est adipisicing\"').to.eql('est adipisicing');\r",
+                  "    pm.expect(jsonData.name, `\"name\" must be \"${new_user_info.name}\"`).to.eql(new_user_info.name);\r",
                   "});\r",
                   "pm.test(\"Test user 'login' field\", function () {\r",
                   "    var jsonData = pm.response.json();\r",
                   "    pm.expect(jsonData).to.have.property('login');\r",
-                  "    pm.expect(jsonData.login, '\"login\" field must be \"doloreUpdate\"').to.eql('doloreUpdate');    \r",
+                  "    pm.expect(jsonData.login, `\"login\" field must be \"${new_user_info.login}\"`).to.eql(new_user_info.login);    \r",
                   "});\r",
                   "pm.test(\"Test user 'birthday' field\", function () {\r",
                   "    var jsonData = pm.response.json();\r",
                   "    pm.expect(jsonData).to.have.property('birthday');\r",
-                  "    pm.expect(jsonData.birthday, '\"birthday\" field must be \"1976-09-20\"').to.eql('1976-09-20');\r",
+                  "    pm.expect(jsonData.birthday, `\"birthday\" field must be \"${new_user_info.birthday}\"`).to.eql(new_user_info.birthday);\r",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -349,15 +350,13 @@
                   "        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
                   "    }\r",
                   "\r",
+                  "    let new_user_info = rnd.getUser();\r",
+                  "    pm.collectionVariables.set(\"new_user_info\", new_user_info);\r",
+                  "    new_user_info[\"id\"] = user.id;\r",
+                  "\r",
                   "    pm.request.body.update({\r",
                   "        mode: 'raw',\r",
-                  "        raw: JSON.stringify({\r",
-                  "            \"login\": \"doloreUpdate\",\r",
-                  "            \"name\": \"est adipisicing\",\r",
-                  "            \"id\": user.id,\r",
-                  "            \"email\": \"mail@yandex.ru\",\r",
-                  "            \"birthday\": \"1976-09-20\"\r",
-                  "            }),\r",
+                  "        raw: JSON.stringify(new_user_info),\r",
                   "        options: { raw: { language: 'json' } }\r",
                   "    });\r",
                   "\r",
@@ -596,8 +595,8 @@
                   "    method : \"GET\",\r",
                   "    header: { \"Content-Type\": \"application/json\" }\r",
                   "}, (error, response) => {\r",
-                  "    pm.test(\"user2 has have user1 friend\", function () {\r",
-                  "        pm.expect(response.json()[0].id).to.be.equal(user1_id)\r",
+                  "    pm.test(\"user2 doesn't have user1 friend\", function () {\r",
+                  "        pm.expect(response.json().length).to.be.equal(0);\r",
                   "    });\r",
                   "});\r",
                   ""
@@ -1207,6 +1206,122 @@
           "response": []
         },
         {
+          "name": "Friend reciprocity",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const user1_id = pm.collectionVariables.get(\"id\");\r",
+                  "const user2_id = pm.collectionVariables.get(\"friend_id\");\r",
+                  "\r",
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200,204]);\r",
+                  "});\r",
+                  "\r",
+                  "pm.sendRequest({\r",
+                  "    url : \"http://localhost:8080/users/\" + user1_id + '/friends',\r",
+                  "    method : \"GET\",\r",
+                  "    header: { \"Content-Type\": \"application/json\" }\r",
+                  "}, (error, response) => {\r",
+                  "    pm.test(\"user1 should have 0 friends\", function () {\r",
+                  "        pm.expect(response.json().length).to.be.equal(0);\r",
+                  "    });\r",
+                  "});\r",
+                  "\r",
+                  "pm.sendRequest({\r",
+                  "    url : \"http://localhost:8080/users/\" + user2_id + '/friends',\r",
+                  "    method : \"GET\",\r",
+                  "    header: { \"Content-Type\": \"application/json\" }\r",
+                  "}, (error, response) => {\r",
+                  "    pm.test(\"user2 should have 1 friends\", function () {\r",
+                  "        pm.expect(response.json().length).to.be.equal(1);\r",
+                  "    });\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const main = async () => {\r",
+                  "    const api = new API(pm);\r",
+                  "    const rnd = new RandomUtils();\r",
+                  "\r",
+                  "    let user1, user2;\r",
+                  "    try {\r",
+                  "        user1 = await api.addUser(rnd.getUser());\r",
+                  "        user2 = await api.addUser(rnd.getUser());\r",
+                  "        await api.addFriend(user1.id, user2.id);\r",
+                  "        pm.collectionVariables.set(\"id\", user2.id);\r",
+                  "        pm.collectionVariables.set(\"friend_id\", user1.id);\r",
+                  "    } catch(err) {\r",
+                  "        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
+                  "    }\r",
+                  "\r",
+                  "};\r",
+                  "\r",
+                  "const interval = setInterval(() => {}, 1000);\r",
+                  "\r",
+                  "setTimeout(async () => \r",
+                  "    {\r",
+                  "        try {\r",
+                  "            await main();\r",
+                  "        } catch (e) {\r",
+                  "            console.error(e);\r",
+                  "        } finally {\r",
+                  "            clearInterval(interval);\r",
+                  "        }\r",
+                  "    },  \r",
+                  "    100 \r",
+                  ");"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "*/*"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{id}}/friends/{{friend_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{id}}",
+                "friends",
+                "{{friend_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Friend remove unknown id",
           "event": [
             {
@@ -1551,6 +1666,20 @@
                   "    pm.expect(jsonData).to.have.property('duration');\r",
                   "    pm.expect(jsonData.duration, `\"duration\" field must be %{source.duration}`).to.eql(source.duration);    \r",
                   "});\r",
+                  "pm.test(\"Test film 'mpa' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('mpa');\r",
+                  "    pm.expect(jsonData.mpa.id, `\"mpa.id\" field must be %{source.mpa.id}`).to.eql(source.mpa.id);    \r",
+                  "});\r",
+                  "pm.test(\"Test film 'genres' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    let responseGenres = [];\r",
+                  "    let requestGenres = [];\r",
+                  "    source.genres.forEach((element) => requestGenres.push(element.id));\r",
+                  "    jsonData.genres.forEach((element) => responseGenres.push(element.id));\r",
+                  "    pm.expect(jsonData).to.have.property('genres');\r",
+                  "    pm.expect(responseGenres, `\"genres\" field must be %{requestGenres}`).to.eql(requestGenres);    \r",
+                  "});\r",
                   "\r",
                   ""
                 ],
@@ -1568,6 +1697,144 @@
                   "    let film;\r",
                   "    try {\r",
                   "        film = rnd.getFilm();\r",
+                  "    } catch(err) {\r",
+                  "        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
+                  "    }\r",
+                  "\r",
+                  "    pm.request.body.update({\r",
+                  "        mode: 'raw',\r",
+                  "        raw: JSON.stringify(film),\r",
+                  "        options: { raw: { language: 'json' } }\r",
+                  "    });\r",
+                  "};\r",
+                  "\r",
+                  "const interval = setInterval(() => {}, 1000);\r",
+                  "\r",
+                  "setTimeout(async () => \r",
+                  "    {\r",
+                  "        try {\r",
+                  "            await main();\r",
+                  "        } catch (e) {\r",
+                  "            console.error(e);\r",
+                  "        } finally {\r",
+                  "            clearInterval(interval);\r",
+                  "        }\r",
+                  "    },  \r",
+                  "    100 \r",
+                  ");"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "*/*"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"nisi eiusmod\",\n  \"description\": \"adipisicing\",\n  \"releaseDate\": \"1967-03-25\",\n  \"duration\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/films",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "films"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Film create several genres",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const source = JSON.parse(pm.request.body.raw)\r",
+                  "\r",
+                  "pm.test(\"Status code is 200 or 201\", function () {\r",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200,201]);\r",
+                  "});\r",
+                  "pm.test(\"Has film create response\", function () {\r",
+                  "    pm.response.to.be.withBody;\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "pm.test(\"Test film 'id' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('id');\r",
+                  "});\r",
+                  "pm.test(\"Test film 'name' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('name');\r",
+                  "    pm.expect(jsonData.name, `\"name\" must be \"${source.name}\"`).to.eql(source.name);\r",
+                  "});\r",
+                  "pm.test(\"Test film 'description' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('description');\r",
+                  "    pm.expect(jsonData.description, `\"description\" must be \"${source.description}\"`).to.eql(source.description);\r",
+                  "});\r",
+                  "pm.test(\"Test film 'releaseDate' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('releaseDate');\r",
+                  "    pm.expect(jsonData.releaseDate, `\"releaseDate\" field must be \"${source.releaseDate}\"`).to.eql(source.releaseDate);\r",
+                  "});\r",
+                  "pm.test(\"Test film 'duration' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('duration');\r",
+                  "    pm.expect(jsonData.duration, `\"duration\" field must be %{source.duration}`).to.eql(source.duration);    \r",
+                  "});\r",
+                  "pm.test(\"Test film 'mpa' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('mpa');\r",
+                  "    pm.expect(jsonData.mpa.id, `\"mpa.id\" field must be %{source.mpa.id}`).to.eql(source.mpa.id);    \r",
+                  "});\r",
+                  "pm.test(\"Test film 'genres' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    let responseGenres = [];\r",
+                  "    let requestGenres = [];\r",
+                  "    source.genres.forEach((element) => requestGenres.push(element.id));\r",
+                  "    jsonData.genres.forEach((element) => responseGenres.push(element.id));\r",
+                  "    pm.expect(jsonData).to.have.property('genres');\r",
+                  "    pm.expect(responseGenres, `\"genres\" field must be %{requestGenres}`).to.eql(requestGenres);    \r",
+                  "});\r",
+                  "\r",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const main = async () => {\r",
+                  "    const api = new API(pm);\r",
+                  "    const rnd = new RandomUtils();\r",
+                  "\r",
+                  "    let film;\r",
+                  "    try {\r",
+                  "        film = rnd.getFilm();\r",
+                  "        film.genres = [\r",
+                  "            {\"id\": 3},\r",
+                  "            {\"id\": 5}\r",
+                  "        ]\r",
                   "    } catch(err) {\r",
                   "        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
                   "    }\r",
@@ -1666,7 +1933,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"\",\n  \"description\": \"Description\",\n  \"releaseDate\": \"1900-03-25\",\n  \"duration\": 200\n}",
+              "raw": "{\n  \"name\": \"\",\n  \"description\": \"Description\",\n  \"releaseDate\": \"1900-03-25\",\n  \"duration\": 200,\n  \"mpa\": { \"id\": 1}\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1720,7 +1987,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Film name\",\n  \"description\": \"Пятеро друзей ( комик-группа «Шарло»), приезжают в город Бризуль. Здесь они хотят разыскать господина Огюста Куглова, который задолжал им деньги, а именно 20 миллионов. о Куглов, который за время «своего отсутствия», стал кандидатом Коломбани.\",\n    \"releaseDate\": \"1900-03-25\",\n  \"duration\": 200\n}",
+              "raw": "{\n  \"name\": \"Film name\",\n  \"description\": \"Пятеро друзей ( комик-группа «Шарло»), приезжают в город Бризуль. Здесь они хотят разыскать господина Огюста Куглова, который задолжал им деньги, а именно 20 миллионов. о Куглов, который за время «своего отсутствия», стал кандидатом Коломбани.\",\n    \"releaseDate\": \"1900-03-25\",\n  \"duration\": 200,\n  \"mpa\": { \"id\": 1}\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1774,7 +2041,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Name\",\n  \"description\": \"Description\",\n  \"releaseDate\": \"1890-03-25\",\n  \"duration\": 200\n}",
+              "raw": "{\n  \"name\": \"Name\",\n  \"description\": \"Description\",\n  \"releaseDate\": \"1890-03-25\",\n  \"duration\": 200,\n  \"mpa\": { \"id\": 1}\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1828,7 +2095,115 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Name\",\n  \"description\": \"Descrition\",\n  \"releaseDate\": \"1980-03-25\",\n  \"duration\": -200\n}",
+              "raw": "{\n  \"name\": \"Name\",\n  \"description\": \"Descrition\",\n  \"releaseDate\": \"1980-03-25\",\n  \"duration\": -200,\n  \"mpa\": { \"id\": 1}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/films",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "films"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Film create Fail MPA",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {\r",
+                  "     pm.expect(pm.response.code).to.be.equal(400);\r",
+                  "});\r",
+                  "pm.test(\"Has error response\", function () {\r",
+                  "    pm.response.to.be.withBody;\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "*/*"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Name\",\n  \"description\": \"Descrition\",\n  \"releaseDate\": \"1980-03-25\",\n  \"duration\": 200,\n  \"mpa\": { \"id\": 10}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/films",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "films"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Film create Fail Genre",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {\r",
+                  "     pm.expect(pm.response.code).to.be.equal(400);\r",
+                  "});\r",
+                  "pm.test(\"Has error response\", function () {\r",
+                  "    pm.response.to.be.withBody;\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "*/*"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Name\",\n  \"description\": \"Descrition\",\n  \"releaseDate\": \"1980-03-25\",\n  \"duration\": 200,\n  \"mpa\": { \"id\": 5},\n  \"genres\": [\n    {\"id\": 500}\n    ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1919,7 +2294,8 @@
                   "            \"releaseDate\": \"1989-04-17\",\r",
                   "            \"description\": \"New film update decription\",\r",
                   "            \"duration\": 190,\r",
-                  "            \"rate\": 4\r",
+                  "            \"rate\": 4,\r",
+                  "            \"mpa\": { \"id\": 3}\r",
                   "            }),\r",
                   "        options: { raw: { language: 'json' } }\r",
                   "    });\r",
@@ -1985,8 +2361,8 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 404\", function () {\r",
-                  "    pm.expect(pm.response.code).to.be.equal(404);\r",
+                  "pm.test(\"Status code is 500\", function () {\r",
+                  "    pm.expect(pm.response.code).to.be.oneOf([500, 404]);\r",
                   "});\r",
                   "pm.test(\"Has error response\", function () {\r",
                   "    pm.response.to.be.withBody;\r",
@@ -1994,8 +2370,7 @@
                   "});\r",
                   ""
                 ],
-                "type": "text/javascript",
-                "packages": {}
+                "type": "text/javascript"
               }
             },
             {
@@ -2022,7 +2397,8 @@
                   "            \"releaseDate\": \"1989-04-17\",\r",
                   "            \"description\": \"New film update decription\",\r",
                   "            \"duration\": 190,\r",
-                  "            \"rate\": 4\r",
+                  "            \"rate\": 4,\r",
+                  "            \"mpa\": { \"id\": 3}\r",
                   "            }),\r",
                   "        options: { raw: { language: 'json' } }\r",
                   "    });\r",
@@ -2044,8 +2420,7 @@
                   "    100 \r",
                   ");"
                 ],
-                "type": "text/javascript",
-                "packages": {}
+                "type": "text/javascript"
               }
             }
           ],
@@ -2253,14 +2628,6 @@
                   "pm.test(\"Status code is 200\", function () {\r",
                   "    pm.expect(pm.response.code).to.be.oneOf([200,204]);\r",
                   "});\r",
-                  "\r",
-                  "pm.sendRequest({\r",
-                  "    url : \"http://localhost:8080/films/\" + 45,\r",
-                  "    method : \"GET\",\r",
-                  "    header: { \"Content-Type\": \"application/json\" }\r",
-                  "}, (error, response) => {\r",
-                  "    console.log(response.json())\r",
-                  "});\r",
                   ""
                 ],
                 "type": "text/javascript"
@@ -2302,198 +2669,6 @@
                   ");"
                 ],
                 "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Accept",
-                "value": "*/*"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/films/{{film_id}}/like/{{id}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "films",
-                "{{film_id}}",
-                "like",
-                "{{id}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Add like unknown film",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 404\", function () {\r",
-                  "    pm.expect(pm.response.code).to.be.equal(404);\r",
-                  "});\r",
-                  "pm.test(\"Has error response\", function () {\r",
-                  "    pm.response.to.be.withBody;\r",
-                  "    pm.response.to.be.json;\r",
-                  "});\r",
-                  ""
-                ],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            },
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [
-                  "const main = async () => {\r",
-                  "    const api = new API(pm);\r",
-                  "    const rnd = new RandomUtils();\r",
-                  "\r",
-                  "    let user, film;\r",
-                  "    try {\r",
-                  "        user = await api.addUser(rnd.getUser());\r",
-                  "        film = await api.addFilm(rnd.getFilm());\r",
-                  "        pm.collectionVariables.set(\"id\", user.id);\r",
-                  "        pm.collectionVariables.set(\"film_id\", film.id+1);\r",
-                  "    } catch(err) {\r",
-                  "        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
-                  "    }\r",
-                  "\r",
-                  "};\r",
-                  "\r",
-                  "const interval = setInterval(() => {}, 1000);\r",
-                  "\r",
-                  "setTimeout(async () => \r",
-                  "    {\r",
-                  "        try {\r",
-                  "            await main();\r",
-                  "        } catch (e) {\r",
-                  "            console.error(e);\r",
-                  "        } finally {\r",
-                  "            clearInterval(interval);\r",
-                  "        }\r",
-                  "    },  \r",
-                  "    100 \r",
-                  ");"
-                ],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Accept",
-                "value": "*/*"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/films/{{film_id}}/like/{{id}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "films",
-                "{{film_id}}",
-                "like",
-                "{{id}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Add like unknown user",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 404\", function () {\r",
-                  "    pm.expect(pm.response.code).to.be.equal(404);\r",
-                  "});\r",
-                  "pm.test(\"Has error response\", function () {\r",
-                  "    pm.response.to.be.withBody;\r",
-                  "    pm.response.to.be.json;\r",
-                  "});\r",
-                  ""
-                ],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            },
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [
-                  "const main = async () => {\r",
-                  "    const api = new API(pm);\r",
-                  "    const rnd = new RandomUtils();\r",
-                  "\r",
-                  "    let user, film;\r",
-                  "    try {\r",
-                  "        user = await api.addUser(rnd.getUser());\r",
-                  "        film = await api.addFilm(rnd.getFilm());\r",
-                  "        pm.collectionVariables.set(\"id\", user.id+1);\r",
-                  "        pm.collectionVariables.set(\"film_id\", film.id);\r",
-                  "    } catch(err) {\r",
-                  "        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
-                  "    }\r",
-                  "\r",
-                  "};\r",
-                  "\r",
-                  "const interval = setInterval(() => {}, 1000);\r",
-                  "\r",
-                  "setTimeout(async () => \r",
-                  "    {\r",
-                  "        try {\r",
-                  "            await main();\r",
-                  "        } catch (e) {\r",
-                  "            console.error(e);\r",
-                  "        } finally {\r",
-                  "            clearInterval(interval);\r",
-                  "        }\r",
-                  "    },  \r",
-                  "    100 \r",
-                  ");"
-                ],
-                "type": "text/javascript",
-                "packages": {}
               }
             }
           ],
@@ -2623,20 +2798,1124 @@
             }
           },
           "response": []
+        }
+      ]
+    },
+    {
+      "name": "MPA",
+      "item": [
+        {
+          "name": "Get MPA name by id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.be.ok;\r",
+                  "});\r",
+                  "pm.test(\"Get MPA response\", function () {\r",
+                  "    pm.response.to.be.withBody;\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "\r",
+                  "const source = pm.collectionVariables.get(\"source\");\r",
+                  "\r",
+                  "pm.test(\"Test MPA 'id' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('id');\r",
+                  "    pm.expect(jsonData.id, `\"id\" must be ${source}`).to.eql(source);\r",
+                  "});\r",
+                  "\r",
+                  "const MPAS = {\r",
+                  "    1: \"G\",\r",
+                  "    2: \"PG\",\r",
+                  "    3: \"PG-13\",\r",
+                  "    4: \"R\",\r",
+                  "    5: \"NC-17\"\r",
+                  "}\r",
+                  "\r",
+                  "pm.test(\"Test MPA 'name' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('name');\r",
+                  "    pm.expect(jsonData.name, `\"name\" must be \"${MPAS[source]}\"`).to.eql(MPAS[source]);\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const mpa = Math.floor(Math.random() * (5 - 1 + 1) + 1);\r",
+                  "pm.collectionVariables.set(\"id\", mpa);\r",
+                  "pm.collectionVariables.set(\"source\", mpa)"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/mpa/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mpa",
+                "{{id}}"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Conflict",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Internal Server Error",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            }
+          ]
         },
         {
-          "name": "Remove like unknown film",
+          "name": "MPA  id=9999 get not found",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
                   "pm.test(\"Status code is 404\", function () {\r",
-                  "    pm.expect(pm.response.code).to.be.equal(404);\r",
+                  "    pm.response.to.have.status(404);\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/mpa/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mpa",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "9999",
+                  "description": "(Required) "
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Conflict",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Internal Server Error",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            }
+          ]
+        },
+        {
+          "name": "MPA get All",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.be.ok;\r",
                   "});\r",
-                  "pm.test(\"Has error response\", function () {\r",
+                  "pm.test(\"Test list MPA response\", function () {\r",
                   "    pm.response.to.be.withBody;\r",
                   "    pm.response.to.be.json;\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.length, 'List length must be 5').to.eql(5);\r",
+                  "});\r",
+                  "pm.test(\"Test MPA[0] 'id' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[0]).to.have.property('id');\r",
+                  "    pm.expect(jsonData[0].id, '\"id\" must be 1').to.eql(1);\r",
+                  "});\r",
+                  "pm.test(\"Test MPA[0] 'name' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[0]).to.have.property('name');\r",
+                  "    pm.expect(jsonData[0].name, '\"name\" must be \"G\"').to.eql('G');\r",
+                  "});\r",
+                  "pm.test(\"Test MPA[1] 'id' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[1]).to.have.property('id');\r",
+                  "    pm.expect(jsonData[1].id, '\"id\" must be 2').to.eql(2);\r",
+                  "});\r",
+                  "pm.test(\"Test MPA[1] 'name' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[1]).to.have.property('name');\r",
+                  "    pm.expect(jsonData[1].name, '\"name\" must be \"PG\"').to.eql('PG');\r",
+                  "});\r",
+                  "pm.test(\"Test MPA[2] 'id' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[2]).to.have.property('id');\r",
+                  "    pm.expect(jsonData[2].id, '\"id\" must be 3').to.eql(3);\r",
+                  "});\r",
+                  "pm.test(\"Test MPA[2] 'name' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[2]).to.have.property('name');\r",
+                  "    pm.expect(jsonData[2].name, '\"name\" must be \"PG-13\"').to.eql('PG-13');\r",
+                  "});\r",
+                  "pm.test(\"Test MPA[3] 'id' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[3]).to.have.property('id');\r",
+                  "    pm.expect(jsonData[3].id, '\"id\" must be 4').to.eql(4);\r",
+                  "});\r",
+                  "pm.test(\"Test MPA[3] 'name' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[3]).to.have.property('name');\r",
+                  "    pm.expect(jsonData[3].name, '\"name\" must be \"R\"').to.eql('R');\r",
+                  "});\r",
+                  "pm.test(\"Test MPA[4] 'id' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[4]).to.have.property('id');\r",
+                  "    pm.expect(jsonData[4].id, '\"id\" must be 5').to.eql(5);\r",
+                  "});\r",
+                  "pm.test(\"Test MPA[4] 'name' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[4]).to.have.property('name');\r",
+                  "    pm.expect(jsonData[4].name, '\"name\" must be \"NC-17\"').to.eql('NC-17');\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/mpa",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mpa"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Genre",
+      "item": [
+        {
+          "name": "Get Genre name by id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.be.ok;\r",
+                  "});\r",
+                  "pm.test(\"Get MPA response\", function () {\r",
+                  "    pm.response.to.be.withBody;\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "\r",
+                  "const source = pm.collectionVariables.get(\"source\");\r",
+                  "\r",
+                  "pm.test(\"Test MPA 'id' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('id');\r",
+                  "    pm.expect(jsonData.id, `\"id\" must be ${source}`).to.eql(source);\r",
+                  "});\r",
+                  "\r",
+                  "const MPAS = {\r",
+                  "    1: \"Комедия\",\r",
+                  "    2: \"Драма\",\r",
+                  "    3: \"Мультфильм\",\r",
+                  "    4: \"Триллер\",\r",
+                  "    5: \"Документальный\",\r",
+                  "    6: \"Боевик\"\r",
+                  "}\r",
+                  "\r",
+                  "pm.test(\"Test MPA 'name' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('name');\r",
+                  "    pm.expect(jsonData.name, `\"name\" must be \"${MPAS[source]}\"`).to.eql(MPAS[source]);\r",
+                  "});\r",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const mpa = Math.floor(Math.random() * (6 - 1 + 1) + 1);\r",
+                  "pm.collectionVariables.set(\"id\", mpa);\r",
+                  "pm.collectionVariables.set(\"source\", mpa)"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/genres/{{id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "genres",
+                "{{id}}"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Conflict",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Internal Server Error",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            }
+          ]
+        },
+        {
+          "name": "Genre  id=9999 get not found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {\r",
+                  "    pm.response.to.have.status(404);\r",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/genres/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "genres",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "9999",
+                  "description": "(Required) "
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Conflict",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Internal Server Error",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            }
+          ]
+        },
+        {
+          "name": "Genre get All",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.be.ok;\r",
+                  "});\r",
+                  "pm.test(\"Test list genre response\", function () {\r",
+                  "    pm.response.to.be.withBody;\r",
+                  "    pm.response.to.be.json;\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData.length, 'List length must be 6').to.eql(6);\r",
+                  "});\r",
+                  "pm.test(\"Test genre[0] 'id' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[0]).to.have.property('id');\r",
+                  "    pm.expect(jsonData[0].id, '\"id\" must be 1').to.eql(1);\r",
+                  "});\r",
+                  "pm.test(\"Test genre[0] 'name' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[0]).to.have.property('name');\r",
+                  "    pm.expect(jsonData[0].name, '\"name\" must be \"Комедия\"').to.eql('Комедия');\r",
+                  "});\r",
+                  "pm.test(\"Test genre[1] 'id' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[1]).to.have.property('id');\r",
+                  "    pm.expect(jsonData[1].id, '\"id\" must be 2').to.eql(2);\r",
+                  "});\r",
+                  "pm.test(\"Test genre[1] 'name' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[1]).to.have.property('name');\r",
+                  "    pm.expect(jsonData[1].name, '\"name\" must be \"Драма\"').to.eql('Драма');\r",
+                  "});\r",
+                  "pm.test(\"Test genre[2] 'id' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[2]).to.have.property('id');\r",
+                  "    pm.expect(jsonData[2].id, '\"id\" must be 3').to.eql(3);\r",
+                  "});\r",
+                  "pm.test(\"Test genre[2] 'name' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[2]).to.have.property('name');\r",
+                  "    pm.expect(jsonData[2].name, '\"name\" must be \"Мультфильм\"').to.eql('Мультфильм');\r",
+                  "});\r",
+                  "pm.test(\"Test genre[3] 'id' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[3]).to.have.property('id');\r",
+                  "    pm.expect(jsonData[3].id, '\"id\" must be 4').to.eql(4);\r",
+                  "});\r",
+                  "pm.test(\"Test genre[3] 'name' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[3]).to.have.property('name');\r",
+                  "    pm.expect(jsonData[3].name, '\"name\" must be \"Триллер\"').to.eql('Триллер');\r",
+                  "});\r",
+                  "pm.test(\"Test genre[4] 'id' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[4]).to.have.property('id');\r",
+                  "    pm.expect(jsonData[4].id, '\"id\" must be 5').to.eql(5);\r",
+                  "});\r",
+                  "pm.test(\"Test genre[4] 'name' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[4]).to.have.property('name');\r",
+                  "    pm.expect(jsonData[4].name, '\"name\" must be \"Документальный\"').to.eql('Документальный');\r",
+                  "});\r",
+                  "pm.test(\"Test genre[5] 'id' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[5]).to.have.property('id');\r",
+                  "    pm.expect(jsonData[5].id, '\"id\" must be 6').to.eql(6);\r",
+                  "});\r",
+                  "pm.test(\"Test genre[5] 'name' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData[5]).to.have.property('name');\r",
+                  "    pm.expect(jsonData[5].name, '\"name\" must be \"Боевик\"').to.eql('Боевик');\r",
+                  "});\r",
+                  "\r",
+                  ""
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/genres",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "genres"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            }
+          ]
+        },
+        {
+          "name": "Film get with genre",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.be.ok;\r",
+                  "});\r",
+                  "pm.test(\"Get film response\", function () {\r",
+                  "    pm.response.to.be.withBody;\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "pm.test(\"Test film 'id' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('id');\r",
+                  "    var filmId = pm.collectionVariables.get(\"id\");\r",
+                  "    pm.expect(jsonData.id, `\"id\" must be ${filmId}`).to.eql(filmId);\r",
+                  "});\r",
+                  "pm.test(\"Test film 'name' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('name');\r",
+                  "    pm.expect(jsonData.name, '\"name\" must be \"Film Updated\"').to.eql('Film Updated');\r",
+                  "});\r",
+                  "pm.test(\"Test film 'description' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('description');\r",
+                  "    pm.expect(jsonData.description, '\"description\" must be \"New film update decription\"').to.eql('New film update decription');\r",
+                  "});\r",
+                  "pm.test(\"Test film 'releaseDate' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('releaseDate');\r",
+                  "    pm.expect(jsonData.releaseDate, '\"releaseDate\" field must be \"1989-04-17\"').to.eql('1989-04-17');\r",
+                  "});\r",
+                  "pm.test(\"Test film 'duration' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('duration');\r",
+                  "    pm.expect(jsonData.duration, '\"duration\" field must be 190').to.eql(190);    \r",
+                  "});\r",
+                  "pm.test(\"Test film 'mpa' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('mpa');\r",
+                  "    pm.expect(jsonData.mpa).to.have.property('id');\r",
+                  "    pm.expect(jsonData.mpa.id, '\"mpa.id\" field must be 5').to.eql(5);    \r",
+                  "    pm.expect(jsonData.mpa).to.have.property('name');\r",
+                  "    pm.expect(jsonData.mpa.name, '\"mpa.name\" field must be \"PG\"').to.eql(\"NC-17\");    \r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Test film 'genres' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('genres');\r",
+                  "    pm.expect(jsonData.genres.length, '\"genres\" field must be have 1 genre').to.eql(1);\r",
+                  "    pm.expect(jsonData.genres[0]).to.have.property('id');\r",
+                  "    pm.expect(jsonData.genres[0].id, '\"genres[0].id\" field must be 2').to.eql(2);    \r",
+                  "    pm.expect(jsonData.genres[0]).to.have.property('name');\r",
+                  "    pm.expect(jsonData.genres[0].name, '\"genres[0].name\" field must be \"Драма\"').to.eql('Драма');\r",
                   "});\r",
                   ""
                 ],
@@ -2652,13 +3931,17 @@
                   "    const api = new API(pm);\r",
                   "    const rnd = new RandomUtils();\r",
                   "\r",
-                  "    let user, film;\r",
                   "    try {\r",
-                  "        user = await api.addUser(rnd.getUser());\r",
-                  "        film = await api.addFilm(rnd.getFilm());\r",
-                  "        await api.addLike(film.id, user.id);\r",
-                  "        pm.collectionVariables.set(\"id\", user.id);\r",
-                  "        pm.collectionVariables.set(\"film_id\", film.id+1);\r",
+                  "        film = await api.addFilm({\r",
+                  "            \"name\": \"Film Updated\",\r",
+                  "            \"releaseDate\": \"1989-04-17\",\r",
+                  "            \"description\": \"New film update decription\",\r",
+                  "            \"duration\": 190,\r",
+                  "            \"rate\": 4,\r",
+                  "            \"mpa\": { \"id\": 5},\r",
+                  "            \"genres\": [{ \"id\": 2}]\r",
+                  "        });\r",
+                  "        pm.collectionVariables.set(\"id\", film.id);\r",
                   "    } catch(err) {\r",
                   "        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
                   "    }\r",
@@ -2686,54 +3969,229 @@
             }
           ],
           "request": {
-            "method": "DELETE",
+            "method": "GET",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
               {
                 "key": "Accept",
                 "value": "*/*"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
-              "raw": "{{baseUrl}}/films/{{film_id}}/like/{{id}}",
+              "raw": "{{baseUrl}}/films/:id",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "films",
-                "{{film_id}}",
-                "like",
-                "{{id}}"
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{id}}",
+                  "description": "(Required) "
+                }
               ]
             }
           },
-          "response": []
+          "response": [
+            {
+              "name": "OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/films/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "films",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/films/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "films",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Conflict",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/films/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "films",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Internal Server Error",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/films/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "films",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            }
+          ]
         },
         {
-          "name": "Remove like unknown user",
+          "name": "Film get without genre",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 404\", function () {\r",
-                  "    pm.expect(pm.response.code).to.be.equal(404);\r",
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.be.ok;\r",
                   "});\r",
-                  "pm.test(\"Has error response\", function () {\r",
+                  "pm.test(\"Get film response\", function () {\r",
                   "    pm.response.to.be.withBody;\r",
                   "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "pm.test(\"Test film 'id' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('id');\r",
+                  "    var filmId = pm.collectionVariables.get(\"id\");\r",
+                  "    pm.expect(jsonData.id, `\"id\" must be ${filmId}`).to.eql(filmId);\r",
+                  "});\r",
+                  "pm.test(\"Test film 'name' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('name');\r",
+                  "    pm.expect(jsonData.name, '\"name\" must be \"New film\"').to.eql('New film');\r",
+                  "});\r",
+                  "pm.test(\"Test film 'description' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('description');\r",
+                  "    pm.expect(jsonData.description, '\"description\" must be \"New film about friends\"').to.eql('New film about friends');\r",
+                  "});\r",
+                  "pm.test(\"Test film 'releaseDate' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('releaseDate');\r",
+                  "    pm.expect(jsonData.releaseDate, '\"releaseDate\" field must be \"1999-04-30\"').to.eql('1999-04-30');\r",
+                  "});\r",
+                  "pm.test(\"Test film 'duration' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('duration');\r",
+                  "    pm.expect(jsonData.duration, '\"duration\" field must be 120').to.eql(120);    \r",
+                  "});\r",
+                  "pm.test(\"Test film 'mpa' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('mpa');\r",
+                  "    pm.expect(jsonData.mpa).to.have.property('id');\r",
+                  "    pm.expect(jsonData.mpa.id, '\"mpa.id\" field must be 3').to.eql(3);    \r",
+                  "    pm.expect(jsonData.mpa).to.have.property('name');\r",
+                  "    pm.expect(jsonData.mpa.name, '\"mpa.name\" field must be \"PG-13\"').to.eql(\"PG-13\");    \r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Test film 'genres' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('genres');\r",
+                  "    if (jsonData.genres != null) {\r",
+                  "        pm.expect(jsonData.genres.length, '\"genres\" field must be have 0 genre').to.eql(0);\r",
+                  "    }\r",
                   "});\r",
                   ""
                 ],
@@ -2749,13 +4207,15 @@
                   "    const api = new API(pm);\r",
                   "    const rnd = new RandomUtils();\r",
                   "\r",
-                  "    let user, film;\r",
                   "    try {\r",
-                  "        user = await api.addUser(rnd.getUser());\r",
-                  "        film = await api.addFilm(rnd.getFilm());\r",
-                  "        await api.addLike(film.id, user.id);\r",
-                  "        pm.collectionVariables.set(\"id\", user.id+1);\r",
-                  "        pm.collectionVariables.set(\"film_id\", film.id);\r",
+                  "        film = await api.addFilm({\r",
+                  "            \"name\": \"New film\",\r",
+                  "            \"releaseDate\": \"1999-04-30\",\r",
+                  "            \"description\": \"New film about friends\",\r",
+                  "            \"duration\": 120,\r",
+                  "            \"mpa\": { \"id\": 3}\r",
+                  "        });\r",
+                  "        pm.collectionVariables.set(\"id\", film.id);\r",
                   "    } catch(err) {\r",
                   "        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
                   "    }\r",
@@ -2783,40 +4243,739 @@
             }
           ],
           "request": {
-            "method": "DELETE",
+            "method": "GET",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
               {
                 "key": "Accept",
                 "value": "*/*"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
             "url": {
-              "raw": "{{baseUrl}}/films/{{film_id}}/like/{{id}}",
+              "raw": "{{baseUrl}}/films/:id",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "films",
-                "{{film_id}}",
-                "like",
-                "{{id}}"
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{id}}",
+                  "description": "(Required) "
+                }
               ]
             }
           },
-          "response": []
+          "response": [
+            {
+              "name": "OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/films/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "films",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/films/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "films",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Conflict",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/films/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "films",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Internal Server Error",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/films/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "films",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            }
+          ]
+        },
+        {
+          "name": "Film get with genres",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.be.ok;\r",
+                  "});\r",
+                  "pm.test(\"Get film response\", function () {\r",
+                  "    pm.response.to.be.withBody;\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "pm.test(\"Test film 'id' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('id');\r",
+                  "    var filmId = pm.collectionVariables.get(\"id\");\r",
+                  "    pm.expect(jsonData.id, `\"id\" must be ${filmId}`).to.eql(filmId);\r",
+                  "});\r",
+                  "pm.test(\"Test film 'name' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('name');\r",
+                  "    pm.expect(jsonData.name, '\"name\" must be \"New film\"').to.eql('New film');\r",
+                  "});\r",
+                  "pm.test(\"Test film 'description' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('description');\r",
+                  "    pm.expect(jsonData.description, '\"description\" must be \"New film about friends\"').to.eql('New film about friends');\r",
+                  "});\r",
+                  "pm.test(\"Test film 'releaseDate' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('releaseDate');\r",
+                  "    pm.expect(jsonData.releaseDate, '\"releaseDate\" field must be \"1999-04-30\"').to.eql('1999-04-30');\r",
+                  "});\r",
+                  "pm.test(\"Test film 'duration' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('duration');\r",
+                  "    pm.expect(jsonData.duration, '\"duration\" field must be 100').to.eql(120);    \r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Test film 'mpa.id' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('mpa');\r",
+                  "    pm.expect(jsonData.mpa).to.have.property('id');\r",
+                  "    pm.expect(jsonData.mpa.id, '\"mpa.id\" field must be 3').to.eql(3);\r",
+                  "    pm.expect(jsonData.mpa).to.have.property('name');\r",
+                  "    pm.expect(jsonData.mpa.name, '\"mpa.name\" field must be \"PG-13\"').to.eql(\"PG-13\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Test film 'genres' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('genres');\r",
+                  "    pm.expect(jsonData.genres.length, '\"genres\" field must be have 3 genres').to.eql(3);\r",
+                  "    pm.expect(jsonData.genres[0]).to.have.property('id');\r",
+                  "    pm.expect(jsonData.genres[0].id, '\"genres[0].id\" field must be 1').to.eql(1);    \r",
+                  "    pm.expect(jsonData.genres[0]).to.have.property('name');\r",
+                  "    pm.expect(jsonData.genres[0].name, '\"genres[0].name\" field must be \"Комедия\"').to.eql('Комедия');\r",
+                  "    pm.expect(jsonData.genres[1]).to.have.property('id');\r",
+                  "    pm.expect(jsonData.genres[1].id, '\"genres[1].id\" field must be 2').to.eql(2);\r",
+                  "    pm.expect(jsonData.genres[1]).to.have.property('name');\r",
+                  "    pm.expect(jsonData.genres[1].name, '\"genres[1].name\" field must be \"Драма\"').to.eql('Драма');\r",
+                  "    pm.expect(jsonData.genres[2]).to.have.property('id');\r",
+                  "    pm.expect(jsonData.genres[2].id, '\"genres[2].id\" field must be 3').to.eql(3);\r",
+                  "    pm.expect(jsonData.genres[2]).to.have.property('name');\r",
+                  "    pm.expect(jsonData.genres[2].name, '\"genres[2].name\" field must be \"Мультфильм\"').to.eql('Мультфильм');\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const main = async () => {\r",
+                  "    const api = new API(pm);\r",
+                  "    const rnd = new RandomUtils();\r",
+                  "\r",
+                  "    try {\r",
+                  "        film = await api.addFilm({\r",
+                  "            \"name\": \"New film\",\r",
+                  "            \"releaseDate\": \"1999-04-30\",\r",
+                  "            \"description\": \"New film about friends\",\r",
+                  "            \"duration\": 120,\r",
+                  "            \"mpa\": { \"id\": 3},\r",
+                  "            \"genres\": [{ \"id\": 1}, { \"id\": 2}, { \"id\": 3}]\r",
+                  "        });\r",
+                  "        pm.collectionVariables.set(\"id\", film.id);\r",
+                  "    } catch(err) {\r",
+                  "        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
+                  "    }\r",
+                  "\r",
+                  "};\r",
+                  "\r",
+                  "const interval = setInterval(() => {}, 1000);\r",
+                  "\r",
+                  "setTimeout(async () => \r",
+                  "    {\r",
+                  "        try {\r",
+                  "            await main();\r",
+                  "        } catch (e) {\r",
+                  "            console.error(e);\r",
+                  "        } finally {\r",
+                  "            clearInterval(interval);\r",
+                  "        }\r",
+                  "    },  \r",
+                  "    100 \r",
+                  ");"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/films/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "films",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{id}}",
+                  "description": "(Required) "
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/films/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "films",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/films/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "films",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Conflict",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/films/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "films",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Internal Server Error",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/films/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "films",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            }
+          ]
+        },
+        {
+          "name": "Film get with genre  without duplicate",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\r",
+                  "    pm.response.to.be.ok;\r",
+                  "});\r",
+                  "pm.test(\"Get film response\", function () {\r",
+                  "    pm.response.to.be.withBody;\r",
+                  "    pm.response.to.be.json;\r",
+                  "});\r",
+                  "pm.test(\"Test film 'id' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('id');\r",
+                  "    var filmId = pm.collectionVariables.get(\"id\");\r",
+                  "    pm.expect(jsonData.id, `\"id\" must be ${filmId}`).to.eql(filmId);\r",
+                  "});\r",
+                  "pm.test(\"Test film 'name' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('name');\r",
+                  "    pm.expect(jsonData.name, '\"name\" must be \"New film\"').to.eql('New film');\r",
+                  "});\r",
+                  "pm.test(\"Test film 'description' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('description');\r",
+                  "    pm.expect(jsonData.description, '\"description\" must be \"New film about friends\"').to.eql('New film about friends');\r",
+                  "});\r",
+                  "pm.test(\"Test film 'releaseDate' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('releaseDate');\r",
+                  "    pm.expect(jsonData.releaseDate, '\"releaseDate\" field must be \"1999-04-30\"').to.eql('1999-04-30');\r",
+                  "});\r",
+                  "pm.test(\"Test film 'duration' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('duration');\r",
+                  "    pm.expect(jsonData.duration, '\"duration\" field must be 100').to.eql(120);    \r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Test film 'mpa.id' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('mpa');\r",
+                  "    pm.expect(jsonData.mpa).to.have.property('id');\r",
+                  "    pm.expect(jsonData.mpa.id, '\"mpa.id\" field must be 3').to.eql(3);\r",
+                  "    pm.expect(jsonData.mpa).to.have.property('name');\r",
+                  "    pm.expect(jsonData.mpa.name, '\"mpa.name\" field must be \"PG-13\"').to.eql(\"PG-13\");\r",
+                  "});\r",
+                  "\r",
+                  "pm.test(\"Test film 'genres' field\", function () {\r",
+                  "    var jsonData = pm.response.json();\r",
+                  "    pm.expect(jsonData).to.have.property('genres');\r",
+                  "    pm.expect(jsonData.genres.length, '\"genres\" field must be have 2 genres').to.eql(2);\r",
+                  "    pm.expect(jsonData.genres[0]).to.have.property('id');\r",
+                  "    pm.expect(jsonData.genres[0].id, '\"genres[0].id\" field must be 1').to.eql(1);    \r",
+                  "    pm.expect(jsonData.genres[0]).to.have.property('name');\r",
+                  "    pm.expect(jsonData.genres[0].name, '\"genres[0].name\" field must be \"Комедия\"').to.eql('Комедия');\r",
+                  "    pm.expect(jsonData.genres[1]).to.have.property('id');\r",
+                  "    pm.expect(jsonData.genres[1].id, '\"genres[1].id\" field must be 2').to.eql(2);\r",
+                  "    pm.expect(jsonData.genres[1]).to.have.property('name');\r",
+                  "    pm.expect(jsonData.genres[1].name, '\"genres[1].name\" field must be \"Драма\"').to.eql('Драма');\r",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const main = async () => {\r",
+                  "    const api = new API(pm);\r",
+                  "    const rnd = new RandomUtils();\r",
+                  "\r",
+                  "    try {\r",
+                  "        film = await api.addFilm({\r",
+                  "            \"name\": \"New film\",\r",
+                  "            \"releaseDate\": \"1999-04-30\",\r",
+                  "            \"description\": \"New film about friends\",\r",
+                  "            \"duration\": 120,\r",
+                  "            \"mpa\": { \"id\": 3},\r",
+                  "            \"genres\": [{ \"id\": 1}, { \"id\": 2}, { \"id\": 1}]\r",
+                  "        });\r",
+                  "        pm.collectionVariables.set(\"id\", film.id);\r",
+                  "    } catch(err) {\r",
+                  "        console.error(\"Ошибка при подготовке тестовых данных.\", err);\r",
+                  "    }\r",
+                  "\r",
+                  "};\r",
+                  "\r",
+                  "const interval = setInterval(() => {}, 1000);\r",
+                  "\r",
+                  "setTimeout(async () => \r",
+                  "    {\r",
+                  "        try {\r",
+                  "            await main();\r",
+                  "        } catch (e) {\r",
+                  "            console.error(e);\r",
+                  "        } finally {\r",
+                  "            clearInterval(interval);\r",
+                  "        }\r",
+                  "    },  \r",
+                  "    100 \r",
+                  ");"
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "*/*"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/films/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "films",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{id}}",
+                  "description": "(Required) "
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/films/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "films",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/films/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "films",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Conflict",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/films/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "films",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Internal Server Error",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/films/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "films",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "-29029902",
+                      "description": "(Required) "
+                    }
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "text",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "*/*"
+                }
+              ],
+              "cookie": [],
+              "body": ""
+            }
+          ]
         }
       ]
     }
@@ -2932,7 +5091,9 @@
           "            name: this.getWord(15),",
           "            description: this.getWord(50),",
           "            releaseDate: date.toISOString().slice(0,10),",
-          "            duration: Math.floor(Math.random() * (180 - 60 + 1) + 60)",
+          "            duration: Math.floor(Math.random() * (180 - 60 + 1) + 60),",
+          "            mpa: { id: Math.floor(Math.random() * (5 - 1 + 1) + 1)},",
+          "            genres: [{ id: Math.floor(Math.random() * (6 - 1 + 1) + 1)}]",
           "        };",
           "    }",
           "",
@@ -2970,22 +5131,22 @@
     },
     {
       "key": "id",
-      "value": "0"
+      "value": ""
     },
     {
       "key": "friend_id",
-      "value": "0"
+      "value": ""
     },
     {
       "key": "user_friends",
       "value": ""
     },
     {
-      "key": "is",
+      "key": "user3_id",
       "value": ""
     },
     {
-      "key": "user3_id",
+      "key": "film",
       "value": ""
     },
     {
@@ -3001,7 +5162,7 @@
       "value": ""
     },
     {
-      "key": "film_id",
+      "key": "source",
       "value": ""
     },
     {
@@ -3009,7 +5170,11 @@
       "value": ""
     },
     {
-      "key": "film",
+      "key": "film_id",
+      "value": ""
+    },
+    {
+      "key": "new_user_info",
       "value": ""
     }
   ]

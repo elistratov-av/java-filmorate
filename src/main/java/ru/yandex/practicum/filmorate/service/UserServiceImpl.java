@@ -45,7 +45,7 @@ public class UserServiceImpl implements UserService {
         User friend = userRepository.get(friendId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id = " + friendId + " не найден"));
         userRepository.addFriend(user, friend);
-        userRepository.addFriend(friend, user);
+        //userRepository.addFriend(friend, user);
     }
 
     @Override
@@ -55,7 +55,7 @@ public class UserServiceImpl implements UserService {
         User friend = userRepository.get(friendId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id = " + friendId + " не найден"));
         userRepository.deleteFriend(user, friend);
-        userRepository.deleteFriend(friend, user);
+        //userRepository.deleteFriend(friend, user);
     }
 
     @Override

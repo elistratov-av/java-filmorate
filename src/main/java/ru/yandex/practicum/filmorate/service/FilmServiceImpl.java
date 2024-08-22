@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.service;
 
+import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -13,7 +14,6 @@ import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.model.User;
 
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 
@@ -44,15 +44,15 @@ public class FilmServiceImpl implements FilmService {
         if (film.getMpa() != null) {
             Integer mpaId = film.getMpa().getId();
             mpa = mpaRepository.get(mpaId)
-                    .orElseThrow(() -> new NotFoundException("Рейтинг с id = " + mpaId + " не найден"));
+                    .orElseThrow(() -> new ValidationException("Рейтинг с id = " + mpaId + " не найден"));
         }
 
-        List<Genre> genres = Collections.emptyList();
+        List<Genre> genres = null;
         if (film.getGenres() != null) {
             final List<Integer> genreIds = film.getGenres().stream().map(Genre::getId).toList();
             genres = genreRepository.getByIds(genreIds);
             if (genreIds.size() != genres.size()) {
-                throw new NotFoundException("Жанры не найдены");
+                throw new ValidationException("Жанры не найдены");
             }
         }
 
@@ -62,7 +62,7 @@ public class FilmServiceImpl implements FilmService {
                 .releaseDate(film.getReleaseDate())
                 .duration(film.getDuration())
                 .mpa(mpa)
-                .genres(new LinkedHashSet<>(genres))
+                .genres(genres != null ? new LinkedHashSet<>(genres) : null)
                 .build());
     }
 
@@ -75,15 +75,15 @@ public class FilmServiceImpl implements FilmService {
         if (newFilm.getMpa() != null) {
             Integer mpaId = newFilm.getMpa().getId();
             mpa = mpaRepository.get(mpaId)
-                    .orElseThrow(() -> new NotFoundException("Рейтинг с id = " + mpaId + " не найден"));
+                    .orElseThrow(() -> new ValidationException("Рейтинг с id = " + mpaId + " не найден"));
         }
 
-        List<Genre> genres = Collections.emptyList();
+        List<Genre> genres = null;
         if (newFilm.getGenres() != null) {
             final List<Integer> genreIds = newFilm.getGenres().stream().map(Genre::getId).toList();
             genres = genreRepository.getByIds(genreIds);
             if (genreIds.size() != genres.size()) {
-                throw new NotFoundException("Жанры не найдены");
+                throw new ValidationException("Жанры не найдены");
             }
         }
 
@@ -92,7 +92,7 @@ public class FilmServiceImpl implements FilmService {
         f.setReleaseDate(newFilm.getReleaseDate());
         f.setDuration(newFilm.getDuration());
         f.setMpa(mpa);
-        f.setGenres(new LinkedHashSet<>(genres));
+        f.setGenres(genres != null ? new LinkedHashSet<>(genres) : null);
 
         return filmRepository.update(f);
     }

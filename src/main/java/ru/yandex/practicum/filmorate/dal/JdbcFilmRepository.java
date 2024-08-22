@@ -96,8 +96,11 @@ public class JdbcFilmRepository implements FilmRepository {
     }
 
     private static Genre mapRowToGenre(ResultSet rs) throws SQLException {
+        int genreId = rs.getInt("genre_id");
+        if (rs.wasNull()) return null;
+
         return Genre.builder()
-                .id(rs.getInt("genre_id"))
+                .id(genreId)
                 .name(rs.getString("genre_name"))
                 .build();
     }
@@ -108,10 +111,14 @@ public class JdbcFilmRepository implements FilmRepository {
             Integer filmId = rs.getInt("film_id");
             if (film == null) {
                 film = mapRowTo(rs);
-                film.setGenres(new LinkedHashSet<>());
             }
             if (!Objects.equals(filmId, film.getId())) break;
-            film.getGenres().add(mapRowToGenre(rs));
+            Genre genre = mapRowToGenre(rs);
+            if (genre != null) {
+                if (film.getGenres() == null)
+                    film.setGenres(new LinkedHashSet<>());
+                film.getGenres().add(genre);
+            }
         }
         return film;
     }
@@ -123,10 +130,14 @@ public class JdbcFilmRepository implements FilmRepository {
             Film film = films.get(filmId);
             if (film == null) {
                 film = mapRowTo(rs);
-                film.setGenres(new LinkedHashSet<>());
                 films.put(film.getId(), film);
             }
-            film.getGenres().add(mapRowToGenre(rs));
+            Genre genre = mapRowToGenre(rs);
+            if (genre != null) {
+                if (film.getGenres() == null)
+                    film.setGenres(new LinkedHashSet<>());
+                film.getGenres().add(genre);
+            }
         }
         return new ArrayList<>(films.values());
     }
