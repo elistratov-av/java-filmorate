@@ -1,21 +1,15 @@
-package ru.yandex.practicum.filmorate.storage;
+package ru.yandex.practicum.filmorate.dal;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
-@Component
-public class InMemoryUserStorage implements UserStorage {
+@Repository("inMemoryUserRepository")
+public class InMemoryUserRepository implements UserRepository {
     private int idCounter = 0;
     private final Map<Integer, User> users = new HashMap<>();
     private final Map<Integer, Set<Integer>> userFriendIds = new HashMap<>();
@@ -25,7 +19,7 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public Optional<User> get(int id) {
+    public Optional<User> get(Integer id) {
         return Optional.ofNullable(users.get(id));
     }
 
