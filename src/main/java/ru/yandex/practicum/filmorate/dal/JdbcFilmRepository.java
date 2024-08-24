@@ -29,7 +29,8 @@ public class JdbcFilmRepository implements FilmRepository {
     // region SQL queries
 
     private static final String FIND_ALL_QUERY = """
-            SELECT f.*, m.name mpa_name, g.genre_id, g.name genre_name
+            SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name mpa_name,
+                g.genre_id, g.name genre_name
             FROM
             	films f
             LEFT JOIN film_genres fg ON
@@ -39,7 +40,8 @@ public class JdbcFilmRepository implements FilmRepository {
             LEFT JOIN mpa m ON
             	f.mpa_id = m.mpa_id""";
     private static final String GET_BY_ID_QUERY = """
-            SELECT f.*, m.name mpa_name, g.genre_id, g.name genre_name
+            SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name mpa_name,
+                g.genre_id, g.name genre_name
             FROM
             	films f
             LEFT JOIN film_genres fg ON
@@ -50,14 +52,24 @@ public class JdbcFilmRepository implements FilmRepository {
             	f.mpa_id = m.mpa_id
             WHERE
             	f.film_id = :id""";
-    private static final String INSERT_QUERY = "INSERT INTO films (name, description, release_date, duration, mpa_id) VALUES(:name, :desc, :rel_date, :duration, :mpa_id)";
-    private static final String UPDATE_QUERY = "UPDATE films SET name = :name, description = :desc, release_date = :rel_date, duration = :duration, mpa_id = mpa_id WHERE film_id = :film_id";
-    private static final String INSERT_FILM_GENRES_QUERY = "MERGE INTO film_genres (film_id, genre_id) VALUES(:film_id, :genre_id)";
-    private static final String DELETE_FILM_GENRES_QUERY = "DELETE FROM film_genres WHERE film_id = :film_id";
-    private static final String ADD_LIKE_QUERY = "MERGE INTO likes (film_id, user_id) VALUES(:film_id, :user_id)";
-    private static final String DELETE_LIKE_QUERY = "DELETE FROM likes WHERE film_id = :film_id AND user_id = :user_id";
+    private static final String INSERT_QUERY = """
+            INSERT INTO films (name, description, release_date, duration, mpa_id)
+            VALUES(:name, :desc, :rel_date, :duration, :mpa_id)""";
+    private static final String UPDATE_QUERY = """
+            UPDATE films
+            SET name = :name, description = :desc, release_date = :rel_date, duration = :duration, mpa_id = mpa_id
+            WHERE film_id = :film_id""";
+    private static final String INSERT_FILM_GENRES_QUERY =
+            "MERGE INTO film_genres (film_id, genre_id) VALUES(:film_id, :genre_id)";
+    private static final String DELETE_FILM_GENRES_QUERY =
+            "DELETE FROM film_genres WHERE film_id = :film_id";
+    private static final String ADD_LIKE_QUERY =
+            "MERGE INTO likes (film_id, user_id) VALUES(:film_id, :user_id)";
+    private static final String DELETE_LIKE_QUERY =
+            "DELETE FROM likes WHERE film_id = :film_id AND user_id = :user_id";
     private static final String GET_TOP_FILMS = """
-            SELECT gf.count, f.*, m.name mpa_name, g.genre_id, g.name genre_name
+            SELECT gf.count, f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name mpa_name,
+                g.genre_id, g.name genre_name
             FROM (
             	SELECT film_id, COUNT(user_id) count
             	FROM

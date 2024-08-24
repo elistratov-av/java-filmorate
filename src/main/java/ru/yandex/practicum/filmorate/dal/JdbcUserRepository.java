@@ -21,15 +21,21 @@ public class JdbcUserRepository implements UserRepository {
 
     // region SQL queries
 
-    private static final String FIND_ALL_QUERY = "SELECT * FROM users";
-    private static final String GET_BY_ID_QUERY = "SELECT * FROM users u WHERE u.user_id = :id";
-    private static final String INSERT_QUERY = "INSERT INTO users (email, login, user_name, birthday) VALUES(:email, :login, :user_name, :birthday)";
-    private static final String UPDATE_QUERY = "UPDATE users SET email = :email, login = :login, user_name = :user_name, birthday = :birthday WHERE user_id = :user_id";
-    private static final String ADD_FRIEND_QUERY = "MERGE INTO friends (user_id, friend_id) VALUES(:user_id, :friend_id)";
-    private static final String DELETE_FRIEND_QUERY = "DELETE FROM friends WHERE user_id = :user_id AND friend_id = :friend_id";
+    private static final String FIND_ALL_QUERY = "SELECT user_id, email, login, user_name, birthday FROM users";
+    private static final String GET_BY_ID_QUERY =
+            "SELECT user_id, email, login, user_name, birthday FROM users u WHERE u.user_id = :id";
+    private static final String INSERT_QUERY =
+            "INSERT INTO users (email, login, user_name, birthday) VALUES(:email, :login, :user_name, :birthday)";
+    private static final String UPDATE_QUERY = """
+            UPDATE users SET email = :email, login = :login, user_name = :user_name, birthday = :birthday
+            WHERE user_id = :user_id""";
+    private static final String ADD_FRIEND_QUERY =
+            "MERGE INTO friends (user_id, friend_id) VALUES(:user_id, :friend_id)";
+    private static final String DELETE_FRIEND_QUERY =
+            "DELETE FROM friends WHERE user_id = :user_id AND friend_id = :friend_id";
     private static final String GET_FRIENDS_QUERY = """
             SELECT
-            	u.*
+            	u.user_id, u.email, u.login, u.user_name, u.birthday
             FROM
             	friends fr
             JOIN users u ON
@@ -38,7 +44,7 @@ public class JdbcUserRepository implements UserRepository {
             	fr.user_id = :user_id""";
     private static final String GET_MUTUAL_FRIENDS_QUERY = """
             SELECT
-            	u.*
+            	u.user_id, u.email, u.login, u.user_name, u.birthday
             FROM
             	friends fr
             JOIN users u ON

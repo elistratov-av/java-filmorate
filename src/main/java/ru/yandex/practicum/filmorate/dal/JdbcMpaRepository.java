@@ -19,8 +19,8 @@ public class JdbcMpaRepository implements MpaRepository {
 
     // region SQL queries
 
-    private static final String GET_BY_ID_QUERY = "SELECT * FROM mpa m WHERE m.mpa_id = :id";
-    private static final String FIND_ALL_QUERY = "SELECT * FROM mpa";
+    private static final String GET_BY_ID_QUERY = "SELECT mpa_id, name FROM mpa m WHERE m.mpa_id = :id";
+    private static final String FIND_ALL_QUERY = "SELECT mpa_id, name FROM mpa";
 
     // endregion
 

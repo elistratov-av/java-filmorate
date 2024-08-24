@@ -19,9 +19,9 @@ public class JdbcGenreRepository implements GenreRepository {
 
     // region SQL queries
 
-    private static final String GET_BY_ID_QUERY = "SELECT * FROM genres g WHERE g.genre_id = :id";
-    private static final String FIND_ALL_QUERY = "SELECT * FROM genres";
-    private static final String GET_BY_IDS_QUERY = "SELECT * FROM genres g WHERE g.genre_id IN (:ids)";
+    private static final String GET_BY_ID_QUERY = "SELECT genre_id, name FROM genres g WHERE g.genre_id = :id";
+    private static final String FIND_ALL_QUERY = "SELECT genre_id, name FROM genres";
+    private static final String GET_BY_IDS_QUERY = "SELECT genre_id, name FROM genres g WHERE g.genre_id IN (:ids)";
 
     // endregion
 
