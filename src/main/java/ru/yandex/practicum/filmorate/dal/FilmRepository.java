@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.storage;
+package ru.yandex.practicum.filmorate.dal;
 
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
@@ -6,8 +6,8 @@ import ru.yandex.practicum.filmorate.model.User;
 import java.util.List;
 import java.util.Optional;
 
-public interface FilmStorage {
-    Optional<Film> get(int id);
+public interface FilmRepository {
+    Optional<Film> get(Integer id);
 
     List<Film> findAll();
 
