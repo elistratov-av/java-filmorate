@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.service;
+package ru.yandex.practicum.filmorate.service.impl;
 
 import jakarta.validation.ValidationException;
 import org.springframework.stereotype.Service;

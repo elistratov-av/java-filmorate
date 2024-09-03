@@ -25,7 +25,8 @@ public class Film {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate releaseDate;
     @Positive
-    private double duration;
+    private int duration;
     private Mpa mpa;
     private Set<Genre> genres;
+    private Set<Director> directors;
 }

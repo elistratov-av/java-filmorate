@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
-import ru.yandex.practicum.filmorate.service.FilmValidator;
+import ru.yandex.practicum.filmorate.service.impl.FilmValidator;
 
 import java.util.Collection;
 import java.util.List;

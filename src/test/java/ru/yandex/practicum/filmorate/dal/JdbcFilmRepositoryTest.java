@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.context.annotation.Import;
+import ru.yandex.practicum.filmorate.dal.impl.JdbcFilmRepository;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -39,7 +40,7 @@ class JdbcFilmRepositoryTest {
                 .name("Фильм 1")
                 .description("Интересный фильм")
                 .releaseDate(LocalDate.of(2019, Month.MAY, 14))
-                .duration(1.5)
+                .duration(15)
                 .mpa(Mpa.builder()
                         .id(1)
                         .name("G")
@@ -57,7 +58,7 @@ class JdbcFilmRepositoryTest {
                 .name("Фильм NEW")
                 .description("Новый фильм")
                 .releaseDate(LocalDate.of(2019, Month.MAY, 14))
-                .duration(1.5)
+                .duration(15)
                 .mpa(Mpa.builder()
                         .id(1)
                         .name("G")

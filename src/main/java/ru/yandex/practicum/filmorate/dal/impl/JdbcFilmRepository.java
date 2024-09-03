@@ -1,10 +1,11 @@
-package ru.yandex.practicum.filmorate.dal;
+package ru.yandex.practicum.filmorate.dal.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcOperations;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.dal.FilmRepository;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -99,7 +100,7 @@ public class JdbcFilmRepository implements FilmRepository {
                 .name(rs.getString("name"))
                 .description(rs.getString("description"))
                 .releaseDate(releaseDate != null ? releaseDate.toLocalDate() : null)
-                .duration(rs.getDouble("duration"))
+                .duration(rs.getInt("duration"))
                 .mpa(Mpa.builder()
                         .id(rs.getInt("mpa_id"))
                         .name(rs.getString("mpa_name"))
@@ -123,12 +124,11 @@ public class JdbcFilmRepository implements FilmRepository {
             Integer filmId = rs.getInt("film_id");
             if (film == null) {
                 film = mapRowTo(rs);
+                film.setGenres(new LinkedHashSet<>());
             }
             if (!Objects.equals(filmId, film.getId())) break;
             Genre genre = mapRowToGenre(rs);
             if (genre != null) {
-                if (film.getGenres() == null)
-                    film.setGenres(new LinkedHashSet<>());
                 film.getGenres().add(genre);
             }
         }
@@ -143,11 +143,10 @@ public class JdbcFilmRepository implements FilmRepository {
             if (film == null) {
                 film = mapRowTo(rs);
                 films.put(film.getId(), film);
+                film.setGenres(new LinkedHashSet<>());
             }
             Genre genre = mapRowToGenre(rs);
             if (genre != null) {
-                if (film.getGenres() == null)
-                    film.setGenres(new LinkedHashSet<>());
                 film.getGenres().add(genre);
             }
         }
