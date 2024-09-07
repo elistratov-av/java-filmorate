@@ -14,6 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository("jdbcUserRepository")
 @RequiredArgsConstructor
@@ -68,6 +69,21 @@ public class JdbcUserRepository implements UserRepository {
     private static final String DELETE_USER_FRIENDS_QUERY = """
             DELETE FROM friends
             WHERE user_id = :user_id OR friend_id = :user_id""";
+
+    private static final String GET_USERS_WITH_COMMON_FILMS_BY_FILMS = """
+            SELECT l.user_id, u.email, u.login, u.user_name, u.birthday
+            FROM
+                likes AS l
+            INNER JOIN users AS u ON
+                l.user_id = u.user_id
+            WHERE
+                l.film_id IN (:films_id)
+            GROUP BY
+                l.user_id, u.email, u.login, u.user_name, u.birthday
+            ORDER
+                BY COUNT(l.film_id) DESC
+            LIMIT 10
+            """;
 
     // endregion
 
@@ -175,4 +191,13 @@ public class JdbcUserRepository implements UserRepository {
         jdbc.update(DELETE_USER_FRIENDS_QUERY,
                 new MapSqlParameterSource("user_id", userId));
     }
+
+    @Override
+    public List<User> getUsersWithSameLikes(Set<Integer> films) {
+
+        return jdbc.query(GET_USERS_WITH_COMMON_FILMS_BY_FILMS,
+                new MapSqlParameterSource("films_id", films),
+                JdbcUserRepository::mapRowTo);
+    }
+
 }
