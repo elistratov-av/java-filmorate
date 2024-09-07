@@ -23,7 +23,6 @@ public class FilmServiceImpl implements FilmService {
     private final MpaRepository mpaRepository;
     private final FeedRepository feedRepository;
     private final DirectorRepository directorRepository;
-    private final FeedRepository feedRepository;
 
     @Override
     public Film get(int id) {
