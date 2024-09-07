@@ -4,15 +4,9 @@ import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.dal.FilmRepository;
-import ru.yandex.practicum.filmorate.dal.GenreRepository;
-import ru.yandex.practicum.filmorate.dal.MpaRepository;
-import ru.yandex.practicum.filmorate.dal.UserRepository;
+import ru.yandex.practicum.filmorate.dal.*;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.*;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.util.LinkedHashSet;
@@ -27,6 +21,7 @@ public class FilmServiceImpl implements FilmService {
     private final UserRepository userRepository;
     private final GenreRepository genreRepository;
     private final MpaRepository mpaRepository;
+    private final FeedRepository feedRepository;
 
     @Override
     public Film get(int id) {
@@ -105,6 +100,7 @@ public class FilmServiceImpl implements FilmService {
         User user = userRepository.get(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден"));
         filmRepository.addLike(film, user);
+        addLikeFeed(userId, filmId, Feed.Operation.ADD);
     }
 
     @Override
@@ -114,10 +110,15 @@ public class FilmServiceImpl implements FilmService {
         User user = userRepository.get(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден"));
         filmRepository.deleteLike(film, user);
+        addLikeFeed(userId, filmId, Feed.Operation.REMOVE);
     }
 
     @Override
     public List<Film> getTopFilms(int maxCount) {
         return filmRepository.getTopFilms(maxCount);
+    }
+
+    private void addLikeFeed(Integer userId, Integer filmId, Feed.Operation operation) {
+        feedRepository.create(new Feed(userId, filmId, Feed.EventType.LIKE, operation));
     }
 }
