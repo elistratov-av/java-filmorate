@@ -20,4 +20,8 @@ public interface FilmRepository {
     void deleteLike(Film film, User user);
 
     List<Film> getTopFilms(int maxCount);
+
+    List<Film> getFilmsByDirector(Integer directorId);
+
+    List<Film> getDirectorFilmsByLikes(Integer directorId);
 }
