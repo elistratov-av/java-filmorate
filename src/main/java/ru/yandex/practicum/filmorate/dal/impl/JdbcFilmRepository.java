@@ -6,10 +6,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcOperations;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.FilmRepository;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.*;
 
 import java.sql.Date;
 import java.sql.ResultSet;
@@ -31,7 +28,7 @@ public class JdbcFilmRepository implements FilmRepository {
 
     private static final String FIND_ALL_QUERY = """
             SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name mpa_name,
-                g.genre_id, g.name genre_name
+                g.genre_id, g.name genre_name, d.director_id, d.name director_name
             FROM
             	films f
             LEFT JOIN film_genres fg ON
@@ -39,10 +36,14 @@ public class JdbcFilmRepository implements FilmRepository {
             LEFT JOIN GENRES g ON
             	fg.genre_id = g.genre_id
             LEFT JOIN mpa m ON
-            	f.mpa_id = m.mpa_id""";
+            	f.mpa_id = m.mpa_id
+	        LEFT JOIN film_directors fd ON
+                f.film_id = fd.film_id
+            LEFT JOIN directors d ON
+                fd.director_id = d.director_id""";
     private static final String GET_BY_ID_QUERY = """
             SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name mpa_name,
-                g.genre_id, g.name genre_name
+                g.genre_id, g.name genre_name, d.director_id, d.name director_name
             FROM
             	films f
             LEFT JOIN film_genres fg ON
@@ -51,6 +52,10 @@ public class JdbcFilmRepository implements FilmRepository {
             	fg.genre_id = g.genre_id
             LEFT JOIN mpa m ON
             	f.mpa_id = m.mpa_id
+            LEFT JOIN film_directors fd ON
+                f.film_id = fd.film_id
+            LEFT JOIN directors d ON
+                fd.director_id = d.director_id
             WHERE
             	f.film_id = :id""";
     private static final String INSERT_QUERY = """
@@ -64,13 +69,17 @@ public class JdbcFilmRepository implements FilmRepository {
             "MERGE INTO film_genres (film_id, genre_id) VALUES(:film_id, :genre_id)";
     private static final String DELETE_FILM_GENRES_QUERY =
             "DELETE FROM film_genres WHERE film_id = :film_id";
+    private static final String INSERT_FILM_DIRECTOR_QUERY =
+            "MERGE INTO film_directors (film_id, director_id) VALUES(:film_id, :director_id)";
+    private static final String DELETE_FILM_DIRECTORS_QUERY =
+            "DELETE FROM film_directors WHERE film_id = :film_id";
     private static final String ADD_LIKE_QUERY =
             "MERGE INTO likes (film_id, user_id) VALUES(:film_id, :user_id)";
     private static final String DELETE_LIKE_QUERY =
             "DELETE FROM likes WHERE film_id = :film_id AND user_id = :user_id";
     private static final String GET_TOP_FILMS = """
             SELECT gf.count, f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name mpa_name,
-                g.genre_id, g.name genre_name
+                g.genre_id, g.name genre_name, d.director_id, d.name director_name
             FROM (
             	SELECT film_id, COUNT(user_id) count
             	FROM
@@ -87,7 +96,53 @@ public class JdbcFilmRepository implements FilmRepository {
             LEFT JOIN genres g ON
             	fg.genre_id = g.genre_id
             LEFT JOIN mpa m ON
-            	f.mpa_id = m.mpa_id""";
+            	f.mpa_id = m.mpa_id
+            LEFT JOIN film_directors fd ON
+                f.film_id = fd.film_id
+            LEFT JOIN directors d ON
+                fd.director_id = d.director_id""";
+    private static final String GET_FILMS_BY_DIRECTOR_ID = """
+            SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name mpa_name,
+                g.genre_id, g.name genre_name, d.director_id, d.name director_name
+            FROM
+            	films f
+            LEFT JOIN film_genres fg ON
+            	f.film_id = fg.film_id
+            LEFT JOIN genres g ON
+            	fg.genre_id = g.genre_id
+            LEFT JOIN mpa m ON
+            	f.mpa_id = m.mpa_id
+            LEFT JOIN film_directors fd ON
+                f.film_id = fd.film_id
+            LEFT JOIN directors d ON
+                fd.director_id = d.director_id
+            WHERE
+            	d.director_id = :director_id
+            ORDER BY f.release_date""";
+    private static final String GET_DIRECTOR_FILMS_BY_LIKES = """
+            SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name mpa_name,
+                g.genre_id, g.name genre_name, d.director_id, d.name director_name
+            FROM (
+            	SELECT film_id
+            	FROM
+            		likes l
+            	GROUP BY
+            		film_id
+            	ORDER BY
+            		COUNT(user_id) DESC) gf
+            JOIN films f ON
+            	gf.film_id = f.FILM_ID
+            LEFT JOIN film_genres fg ON
+            	f.film_id = fg.film_id
+            LEFT JOIN genres g ON
+            	fg.genre_id = g.genre_id
+            LEFT JOIN mpa m ON
+            	f.mpa_id = m.mpa_id
+            LEFT JOIN film_directors fd ON
+                f.film_id = fd.film_id
+            LEFT JOIN directors d ON
+                fd.director_id = d.director_id
+            WHERE fd.director_id = :director_id""";
 
     // endregion
 
@@ -118,6 +173,16 @@ public class JdbcFilmRepository implements FilmRepository {
                 .build();
     }
 
+    private static Director mapRowToDirector(ResultSet rs) throws SQLException {
+        int directorId = rs.getInt("director_id");
+        if (rs.wasNull()) return null;
+
+        return Director.builder()
+                .id(directorId)
+                .name(rs.getString("director_name"))
+                .build();
+    }
+
     private static Film mapSetToOne(ResultSet rs) throws SQLException {
         Film film = null;
         while (rs.next()) {
@@ -125,11 +190,16 @@ public class JdbcFilmRepository implements FilmRepository {
             if (film == null) {
                 film = mapRowTo(rs);
                 film.setGenres(new LinkedHashSet<>());
+                film.setDirectors(new LinkedHashSet<>());
             }
             if (!Objects.equals(filmId, film.getId())) break;
             Genre genre = mapRowToGenre(rs);
             if (genre != null) {
                 film.getGenres().add(genre);
+            }
+            Director director = mapRowToDirector(rs);
+            if (director != null) {
+                film.getDirectors().add(director);
             }
         }
         return film;
@@ -144,10 +214,15 @@ public class JdbcFilmRepository implements FilmRepository {
                 film = mapRowTo(rs);
                 films.put(film.getId(), film);
                 film.setGenres(new LinkedHashSet<>());
+                film.setDirectors(new LinkedHashSet<>());
             }
             Genre genre = mapRowToGenre(rs);
             if (genre != null) {
                 film.getGenres().add(genre);
+            }
+            Director director = mapRowToDirector(rs);
+            if (director != null) {
+                film.getDirectors().add(director);
             }
         }
         return new ArrayList<>(films.values());
@@ -184,6 +259,8 @@ public class JdbcFilmRepository implements FilmRepository {
         film.setId(gkh.getKeyAs(Integer.class));
         // Создать связи фильм - жанры
         insertFilmGenres(film.getId(), film.getGenres());
+        // Создать связи фильм - режиссер
+        insertFilmDirectors(film.getId(), film.getDirectors());
         return film;
     }
 
@@ -193,12 +270,26 @@ public class JdbcFilmRepository implements FilmRepository {
         MapSqlParameterSource[] batchArgs = genres.stream()
                 .map(g -> new MapSqlParameterSource("film_id", filmId)
                         .addValue("genre_id", g.getId()))
-                        .toArray(MapSqlParameterSource[]::new);
+                .toArray(MapSqlParameterSource[]::new);
         jdbc.batchUpdate(INSERT_FILM_GENRES_QUERY, batchArgs);
     }
 
     private void deleteFilmGenres(int filmId) {
         jdbc.update(DELETE_FILM_GENRES_QUERY, new MapSqlParameterSource("film_id", filmId));
+    }
+
+    private void insertFilmDirectors(int filmId, Set<Director> directors) {
+        if (directors == null || directors.isEmpty()) return;
+
+        MapSqlParameterSource[] batchArgs = directors.stream()
+                .map(d -> new MapSqlParameterSource("film_id", filmId)
+                        .addValue("director_id", d.getId()))
+                .toArray(MapSqlParameterSource[]::new);
+        jdbc.batchUpdate(INSERT_FILM_DIRECTOR_QUERY, batchArgs);
+    }
+
+    private void deleteFilmDirectors(int filmId) {
+        jdbc.update(DELETE_FILM_DIRECTORS_QUERY, new MapSqlParameterSource("film_id", filmId));
     }
 
     @Override
@@ -215,6 +306,10 @@ public class JdbcFilmRepository implements FilmRepository {
         deleteFilmGenres(newFilm.getId());
         // Создать связи фильм - жанры
         insertFilmGenres(newFilm.getId(), newFilm.getGenres());
+        // Удалить старые связи фильм - режиссер
+        deleteFilmDirectors(newFilm.getId());
+        // Создать связи фильм - режиссер
+        insertFilmDirectors(newFilm.getId(), newFilm.getDirectors());
         return newFilm;
     }
 
@@ -236,6 +331,24 @@ public class JdbcFilmRepository implements FilmRepository {
     public List<Film> getTopFilms(int maxCount) {
         return jdbc.query(GET_TOP_FILMS,
                 new MapSqlParameterSource("max_count", maxCount),
+                JdbcFilmRepository::mapSetToList);
+    }
+
+    @Override
+    public List<Film> getFilmsByDirector(Integer directorId) {
+        if (directorId == null) return null;
+
+        return jdbc.query(GET_FILMS_BY_DIRECTOR_ID,
+                new MapSqlParameterSource("director_id", directorId),
+                JdbcFilmRepository::mapSetToList);
+    }
+
+    @Override
+    public List<Film> getDirectorFilmsByLikes(Integer directorId) {
+        if (directorId == null) return null;
+
+        return jdbc.query(GET_DIRECTOR_FILMS_BY_LIKES,
+                new MapSqlParameterSource("director_id", directorId),
                 JdbcFilmRepository::mapSetToList);
     }
 }

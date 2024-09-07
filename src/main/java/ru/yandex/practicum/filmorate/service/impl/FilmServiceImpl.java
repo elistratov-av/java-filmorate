@@ -22,6 +22,7 @@ public class FilmServiceImpl implements FilmService {
     private final GenreRepository genreRepository;
     private final MpaRepository mpaRepository;
     private final FeedRepository feedRepository;
+    private final DirectorRepository directorRepository;
 
     @Override
     public Film get(int id) {
@@ -52,6 +53,15 @@ public class FilmServiceImpl implements FilmService {
             }
         }
 
+        List<Director> directors = null;
+        if (film.getDirectors() != null) {
+            final List<Integer> directorIds = film.getDirectors().stream().map(Director::getId).toList();
+            directors = directorRepository.getByIds(directorIds);
+            if (directorIds.size() != directors.size()) {
+                throw new ValidationException("Режиссеры не найдены");
+            }
+        }
+
         return filmRepository.create(Film.builder()
                 .name(film.getName())
                 .description(film.getDescription())
@@ -59,6 +69,7 @@ public class FilmServiceImpl implements FilmService {
                 .duration(film.getDuration())
                 .mpa(mpa)
                 .genres(genres != null ? new LinkedHashSet<>(genres) : null)
+                .directors(directors != null ? new LinkedHashSet<>(directors) : null)
                 .build());
     }
 
@@ -83,12 +94,22 @@ public class FilmServiceImpl implements FilmService {
             }
         }
 
+        List<Director> directors = null;
+        if (newFilm.getDirectors() != null) {
+            final List<Integer> directorIds = newFilm.getDirectors().stream().map(Director::getId).toList();
+            directors = directorRepository.getByIds(directorIds);
+            if (directorIds.size() != directors.size()) {
+                throw new ValidationException("Режиссеры не найдены");
+            }
+        }
+
         f.setName(newFilm.getName());
         f.setDescription(newFilm.getDescription());
         f.setReleaseDate(newFilm.getReleaseDate());
         f.setDuration(newFilm.getDuration());
         f.setMpa(mpa);
         f.setGenres(genres != null ? new LinkedHashSet<>(genres) : null);
+        f.setDirectors(directors != null ? new LinkedHashSet<>(directors) : null);
 
         return filmRepository.update(f);
     }
@@ -116,6 +137,20 @@ public class FilmServiceImpl implements FilmService {
     @Override
     public List<Film> getTopFilms(int maxCount) {
         return filmRepository.getTopFilms(maxCount);
+    }
+
+    @Override
+    public List<Film> getDirectorFilms(int directorId, String sortBy) {
+        List<Film> films = null;
+        if ("likes".equalsIgnoreCase(sortBy)) {
+            films = filmRepository.getDirectorFilmsByLikes(directorId);
+        } else if ("year".equalsIgnoreCase(sortBy)) {
+            films = filmRepository.getFilmsByDirector(directorId);
+        }
+        if (films == null) {
+            throw new NotFoundException("Режиссер с id = " + directorId + " не найден");
+        }
+        return films;
     }
 
     private void addLikeFeed(Integer userId, Integer filmId, Feed.Operation operation) {
