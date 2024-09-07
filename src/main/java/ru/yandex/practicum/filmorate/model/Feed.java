@@ -26,6 +26,5 @@ public class Feed {
     }
 
     public enum EventType { LIKE, REVIEW, FRIEND }
-
     public enum Operation { REMOVE, ADD, UPDATE }
 }
