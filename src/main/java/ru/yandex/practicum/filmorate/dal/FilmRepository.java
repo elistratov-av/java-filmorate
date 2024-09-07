@@ -24,4 +24,6 @@ public interface FilmRepository {
     List<Film> getFilmsByDirector(Integer directorId);
 
     List<Film> getDirectorFilmsByLikes(Integer directorId);
+
+    List<Film> searchFilms(String query, String by);
 }
