@@ -22,6 +22,10 @@ public interface FilmRepository {
 
     List<Film> getTopFilms(int maxCount);
 
+    List<Film> getFilmsByDirector(Integer directorId);
+
+    List<Film> getDirectorFilmsByLikes(Integer directorId);
+
     List<Film> getFilmsLikedByUser(int userId);
 
     HashMap<Integer, List<Film>> getLikedFilmsByUsersIds(List<Integer> usersIds);
