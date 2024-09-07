@@ -30,11 +30,11 @@ public class JdbcReviewRepository implements ReviewRepository {
             SELECT review_id, content, is_positive, film_id, user_id, useful
             FROM reviews""";
     private static final String INSERT_QUERY = """
-            INSERT INTO reviews (content, is_positive, film_id, user_id, useful)
-            VALUES(:content, :is_positive, :film_id, :user_id, :useful)""";
+            INSERT INTO reviews (content, is_positive, film_id, user_id)
+            VALUES(:content, :is_positive, :film_id, :user_id)""";
     private static final String UPDATE_QUERY = """
             UPDATE reviews
-            SET content = :content, is_positive = :is_positive, film_id = :film_id, user_id = :user_id, useful = :useful
+            SET content = :content, is_positive = :is_positive, film_id = :film_id, user_id = :user_id
             WHERE review_id = :review_id""";
     private static final String DELETE_BY_ID_QUERY = "DELETE FROM reviews WHERE review_id = :review_id";
     private static final String DELETE_LIKES_BY_REVIEW_QUERY = "DELETE FROM review_likes WHERE review_id = :review_id";
@@ -106,8 +106,7 @@ public class JdbcReviewRepository implements ReviewRepository {
                 new MapSqlParameterSource("content", review.getContent())
                         .addValue("is_positive", review.getIsPositive())
                         .addValue("film_id", review.getFilmId())
-                        .addValue("user_id", review.getUserId())
-                        .addValue("useful", review.getUseful()),
+                        .addValue("user_id", review.getUserId()),
                 gkh);
         review.setReviewId(gkh.getKeyAs(Integer.class));
         return review;
@@ -120,7 +119,6 @@ public class JdbcReviewRepository implements ReviewRepository {
                         .addValue("is_positive", newReview.getIsPositive())
                         .addValue("film_id", newReview.getFilmId())
                         .addValue("user_id", newReview.getUserId())
-                        .addValue("useful", newReview.getUseful())
                         .addValue("review_id", newReview.getReviewId()));
         return newReview;
     }
