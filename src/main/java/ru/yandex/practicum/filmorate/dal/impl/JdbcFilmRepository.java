@@ -14,13 +14,7 @@ import ru.yandex.practicum.filmorate.model.User;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Repository("jdbcFilmRepository")
 @RequiredArgsConstructor
@@ -53,6 +47,7 @@ public class JdbcFilmRepository implements FilmRepository {
             	f.mpa_id = m.mpa_id
             WHERE
             	f.film_id = :id""";
+
     private static final String INSERT_QUERY = """
             INSERT INTO films (name, description, release_date, duration, mpa_id)
             VALUES(:name, :desc, :rel_date, :duration, :mpa_id)""";
@@ -88,6 +83,38 @@ public class JdbcFilmRepository implements FilmRepository {
             	fg.genre_id = g.genre_id
             LEFT JOIN mpa m ON
             	f.mpa_id = m.mpa_id""";
+
+    private static final String GET_BY_USER_ID_QUERY = """
+            SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name,
+                g.genre_id, g.name AS genre_name
+            FROM
+                films AS f
+            INNER JOIN likes AS l ON
+                f.film_id = l.film_id
+            LEFT JOIN mpa AS m ON
+                f.mpa_id = m.mpa_id
+            LEFT JOIN film_genres AS fg ON
+                f.film_id = fg.film_id
+            LEFT JOIN genres AS g ON
+                fg.genre_id = g.genre_id
+            WHERE
+                l.user_id = :user_id""";
+
+    private static final String GET_BY_USERS_IDS_QUERY = """
+            SELECT l.user_id, f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name
+            FROM
+                likes AS l
+            INNER JOIN films AS f ON
+                l.film_id = f.film_id
+            LEFT JOIN mpa AS m ON
+                f.mpa_id = m.mpa_id
+            LEFT JOIN film_genres AS fg ON
+                f.film_id = fg.film_id
+            LEFT JOIN genres AS g ON
+                fg.genre_id = g.genre_id
+            WHERE l.user_id IN (:users_ids)
+            """;
+
 
     // endregion
 
@@ -193,7 +220,7 @@ public class JdbcFilmRepository implements FilmRepository {
         MapSqlParameterSource[] batchArgs = genres.stream()
                 .map(g -> new MapSqlParameterSource("film_id", filmId)
                         .addValue("genre_id", g.getId()))
-                        .toArray(MapSqlParameterSource[]::new);
+                .toArray(MapSqlParameterSource[]::new);
         jdbc.batchUpdate(INSERT_FILM_GENRES_QUERY, batchArgs);
     }
 
@@ -238,4 +265,39 @@ public class JdbcFilmRepository implements FilmRepository {
                 new MapSqlParameterSource("max_count", maxCount),
                 JdbcFilmRepository::mapSetToList);
     }
+
+    @Override
+    public List<Film> getFilmsLikedByUser(int userId) {
+
+        return jdbc.query(GET_BY_USER_ID_QUERY,
+                new MapSqlParameterSource("user_id", userId),
+                JdbcFilmRepository::mapSetToList);
+    }
+
+
+    @Override
+    public HashMap<Integer, List<Film>> getLikedFilmsByUsersIds(List<Integer> userIds) {
+
+        return (HashMap<Integer, List<Film>>) jdbc.query(GET_BY_USERS_IDS_QUERY,
+                new MapSqlParameterSource("users_ids", userIds),
+                rs -> {
+
+                    Map<Integer, List<Film>> userFilmsMap = new HashMap<>();
+
+                    while (rs.next()) {
+
+                        int userId = rs.getInt("user_id");
+
+                        Film film = mapRowTo(rs);
+
+                        if (!userFilmsMap.containsKey(userId)) {
+                            List<Film> filmsArray = new ArrayList<>();
+                            userFilmsMap.put(userId, filmsArray);
+                        }
+                        userFilmsMap.get(userId).add(film);
+                    }
+                    return userFilmsMap;
+                });
+    }
+
 }

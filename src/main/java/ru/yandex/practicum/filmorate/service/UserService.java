@@ -20,4 +20,5 @@ public interface UserService {
     List<User> getFriends(int userId);
 
     List<User> getMutualFriends(int userId, int otherId);
+
 }

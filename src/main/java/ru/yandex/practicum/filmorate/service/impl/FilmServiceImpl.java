@@ -15,8 +15,8 @@ import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
-import java.util.LinkedHashSet;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -120,4 +120,41 @@ public class FilmServiceImpl implements FilmService {
     public List<Film> getTopFilms(int maxCount) {
         return filmRepository.getTopFilms(maxCount);
     }
+
+    @Override
+    public List<Film> getRecommendedFilms(int userId) {
+        if (userId < 0) {
+            throw new ValidationException("Идентификатор пользователя должен быть положительным числом");
+        }
+
+        // Фильмы, которые поставили лайк пользователь X, делавший запрос
+        List<Film> filmsLikedByUser = filmRepository.getFilmsLikedByUser(userId);
+
+        Set<Integer> filmsIdsLikedByUser = filmsLikedByUser.stream()
+                    .map(Film::getId)
+                    .collect(Collectors.toSet());
+
+        // Пользователи, которые поставили лайк те же самые фильмы, что и пользователь X
+        List<User> usersThatLikedSameFilms = userRepository.getUsersWithSameLikes(filmsIdsLikedByUser);
+        List<Integer> usersIds = usersThatLikedSameFilms.stream()
+                .map(User::getId)
+                .toList();
+        HashMap<Integer, List<Film>> foundUsersAllLikedFilms = filmRepository.getLikedFilmsByUsersIds(usersIds);
+
+
+        // Фильмы, которые не поставили лайк пользователь X, делавший запрос
+        List<Film> recommendedFilms = new ArrayList<>();
+
+        for (Map.Entry<Integer, List<Film>> entry : foundUsersAllLikedFilms.entrySet()) {
+            List<Film> likedByOtherUser = entry.getValue();
+
+            for (Film film : likedByOtherUser) {
+                if (!filmsLikedByUser.contains(film)) {
+                    recommendedFilms.add(film);
+                }
+            }
+        }
+        return recommendedFilms;
+    }
+
 }

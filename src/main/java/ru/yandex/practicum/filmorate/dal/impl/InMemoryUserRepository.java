@@ -96,4 +96,9 @@ public class InMemoryUserRepository implements UserRepository {
                 .map(users::get)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public List<User> getUsersWithSameLikes(Set<Integer> filmsId) {
+        return null;
+    }
 }

@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.dal;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -20,4 +21,10 @@ public interface FilmRepository {
     void deleteLike(Film film, User user);
 
     List<Film> getTopFilms(int maxCount);
+
+    List<Film> getFilmsLikedByUser(int userId);
+
+    HashMap<Integer, List<Film>> getLikedFilmsByUsersIds(List<Integer> usersIds);
+
+//    List<Integer> getUsersWithSameLikes(List<Integer> filmsId);
 }

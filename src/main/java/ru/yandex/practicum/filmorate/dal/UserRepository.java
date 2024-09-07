@@ -4,6 +4,7 @@ import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface UserRepository {
     Optional<User> get(Integer id);
@@ -21,4 +22,6 @@ public interface UserRepository {
     List<User> getFriends(User user);
 
     List<User> getMutualFriends(User user, User other);
+
+    List<User> getUsersWithSameLikes(Set<Integer> filmsId);
 }

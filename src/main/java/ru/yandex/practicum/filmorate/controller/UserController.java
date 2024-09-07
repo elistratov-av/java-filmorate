@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.service.UserService;
 import ru.yandex.practicum.filmorate.service.impl.UserValidator;
 
@@ -25,6 +27,7 @@ import java.util.List;
 public class UserController {
     private final UserService userService;
     private final UserValidator userValidator;
+    private final FilmService filmService;
 
     @GetMapping("/{id}")
     public User get(@PathVariable int id) {
@@ -81,5 +84,10 @@ public class UserController {
         List<User> friends = userService.getMutualFriends(id, otherId);
         log.info("Получен список общих друзей для пользователей с id = \"{}\" и otherId = \"{}\"", id, otherId);
         return friends;
+    }
+
+    @GetMapping("/{id}/recommendations")
+    public Collection<Film> getRecommendedFilms(@PathVariable int id) {
+        return filmService.getRecommendedFilms(id);
     }
 }

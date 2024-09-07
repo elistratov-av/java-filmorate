@@ -81,4 +81,14 @@ public class InMemoryFilmRepository implements FilmRepository {
                 .collect(Collectors.toList());
         return topFilms;
     }
+
+    @Override
+    public List<Film> getFilmsLikedByUser(int userId) {
+        return null;
+    }
+
+    @Override
+    public HashMap<Integer, List<Film>> getLikedFilmsByUsersIds(List<Integer> usersIds) {
+        return null;
+    }
 }

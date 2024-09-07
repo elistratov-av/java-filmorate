@@ -72,4 +72,5 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new NotFoundException("Пользователь с id = " + otherId + " не найден"));
         return userRepository.getMutualFriends(user, other);
     }
+
 }
