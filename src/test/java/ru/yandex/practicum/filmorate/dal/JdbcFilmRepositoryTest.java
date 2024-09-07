@@ -50,6 +50,7 @@ class JdbcFilmRepositoryTest {
                                 .id(1)
                                 .name("Комедия")
                                 .build())))
+                .directors(new LinkedHashSet<>())
                 .build();
     }
 
