@@ -20,6 +20,4 @@ public interface FilmService {
     List<Film> getTopFilms(int maxCount);
 
     List<Film> getDirectorFilms(int directorId, String sortBy);
-
-    List<Film> getRecommendedFilms(int id);
 }
