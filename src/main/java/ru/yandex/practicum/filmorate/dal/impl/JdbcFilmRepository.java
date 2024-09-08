@@ -154,7 +154,6 @@ public class JdbcFilmRepository implements FilmRepository {
                 f.film_id = fd.film_id
             LEFT JOIN directors AS d ON
                 fd.director_id = d.director_id
-                        
             WHERE
                 l.user_id = :user_id""";
     private static final String GET_BY_USERS_IDS_QUERY = """
