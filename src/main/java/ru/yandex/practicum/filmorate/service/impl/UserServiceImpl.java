@@ -1,17 +1,20 @@
 package ru.yandex.practicum.filmorate.service.impl;
 
+import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dal.FilmRepository;
 import ru.yandex.practicum.filmorate.dal.FeedRepository;
 import ru.yandex.practicum.filmorate.dal.ReviewRepository;
 import ru.yandex.practicum.filmorate.dal.UserRepository;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Feed;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 
-import java.util.List;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +23,8 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final FeedRepository feedRepository;
     private final ReviewRepository reviewRepository;
+
+    private final FilmRepository filmRepository;
 
     @Override
     public User get(int id) {
@@ -106,4 +111,33 @@ public class UserServiceImpl implements UserService {
         reviewRepository.refreshRatings(ids);
         userRepository.deleteUserById(userId);
     }
+
+    @Override
+    public List<Film> getRecommendedFilms(int userId) {
+        if (userId < 0) {
+            throw new ValidationException("Идентификатор пользователя должен быть положительным числом");
+        }
+        // Фильмы, которые поставили лайк пользователь X, делавший запрос
+        Set<Integer> filmsIdsLikedByUser = filmRepository.getFilmsLikedByUser(userId);
+
+        // Пользователи, которые поставили лайк те же самые фильмы, что и пользователь X
+        Set<Integer> usersIdsThatLikedSameFilms = userRepository.getUsersWithSameLikes(filmsIdsLikedByUser);
+
+        HashMap<Integer, List<Film>> foundUsersAllLikedFilms = filmRepository.getLikedFilmsByUsersIds(usersIdsThatLikedSameFilms);
+
+        // Фильмы, которые не поставили лайк пользователь X, делавший запрос
+        List<Film> recommendedFilms = new ArrayList<>();
+
+        for (Map.Entry<Integer, List<Film>> entry : foundUsersAllLikedFilms.entrySet()) {
+            List<Film> likedByOtherUser = entry.getValue();
+
+            for (Film film : likedByOtherUser) {
+                if (!filmsIdsLikedByUser.contains(film.getId())) {
+                    recommendedFilms.add(film);
+                }
+            }
+        }
+        return recommendedFilms;
+    }
+
 }

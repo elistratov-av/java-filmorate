@@ -9,8 +9,7 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.*;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
-import java.util.LinkedHashSet;
-import java.util.List;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
