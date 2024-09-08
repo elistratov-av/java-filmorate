@@ -29,5 +29,5 @@ public interface UserRepository {
 
     void deleteUserFriends(int userId);
 
-    List<User> getUsersWithSameLikes(Set<Integer> filmsId);
+    Set<Integer> getUsersWithSameLikes(Set<Integer> filmsId);
 }

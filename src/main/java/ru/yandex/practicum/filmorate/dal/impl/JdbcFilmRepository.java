@@ -226,7 +226,7 @@ public class JdbcFilmRepository implements FilmRepository {
                 f.film_id = fd.film_id
             LEFT JOIN directors AS d ON
                 fd.director_id = d.director_id
-            
+                        
             WHERE
                 l.user_id = :user_id""";
 
@@ -333,6 +333,50 @@ public class JdbcFilmRepository implements FilmRepository {
             }
         }
         return new ArrayList<>(films.values());
+    }
+
+    private static HashMap<Integer, List<Film>> mapSetToHashMap(ResultSet rs) throws SQLException {
+
+        HashMap<Integer, LinkedHashMap<Integer, Film>> userWithFilms = new LinkedHashMap<>();
+        while (rs.next()) {
+            Integer userId = rs.getInt("user_id");
+            Integer filmId = rs.getInt("film_id");
+
+            userWithFilms.putIfAbsent(userId, new LinkedHashMap<>());
+
+            Film film = userWithFilms.get(userId).get(filmId);
+            if (film == null) {
+                film = mapRowTo(rs);
+                userWithFilms.get(userId).put(film.getId(), film);
+                film.setGenres(new LinkedHashSet<>());
+                film.setDirectors(new LinkedHashSet<>());
+            }
+            Genre genre = mapRowToGenre(rs);
+            if (genre != null) {
+                film.getGenres().add(genre);
+            }
+            Director director = mapRowToDirector(rs);
+            if (director != null) {
+                film.getDirectors().add(director);
+            }
+        }
+        HashMap<Integer, List<Film>> resultMap = new HashMap<>();
+        for (Map.Entry<Integer, LinkedHashMap<Integer, Film>> entry : userWithFilms.entrySet()) {
+            // Преобразуем LinkedHashMap в List и добавляем в resultMap
+            resultMap.put(entry.getKey(), new ArrayList<>(entry.getValue().values()));
+        }
+
+        return resultMap;
+    }
+
+    private static Set<Integer> mapSetToFilmIds(ResultSet rs) throws SQLException {
+        Set<Integer> filmsIds = new HashSet<>();
+
+        while (rs.next()) {
+            Integer filmId = rs.getInt("film_id");
+            filmsIds.add(filmId);
+        }
+        return filmsIds;
     }
 
     // endregion
@@ -522,38 +566,22 @@ public class JdbcFilmRepository implements FilmRepository {
     }
 
     @Override
-    public List<Film> getFilmsLikedByUser(int userId) {
+    public Set<Integer> getFilmsLikedByUser(int userId) {
 
-            return jdbc.query(GET_BY_USER_ID_QUERY,
-                    new MapSqlParameterSource("user_id", userId),
-                    JdbcFilmRepository::mapSetToList);
+        return jdbc.query(GET_BY_USER_ID_QUERY,
+                new MapSqlParameterSource("user_id", userId),
+                JdbcFilmRepository::mapSetToFilmIds);
     }
 
 
     @Override
-    public HashMap<Integer, List<Film>> getLikedFilmsByUsersIds(List<Integer> userIds) {
+    public HashMap<Integer, List<Film>> getLikedFilmsByUsersIds(Set<Integer> usersIds) {
 
-        return (HashMap<Integer, List<Film>>) jdbc.query(GET_BY_USERS_IDS_QUERY,
-                new MapSqlParameterSource("users_ids", userIds),
-                rs -> {
+        return jdbc.query(GET_BY_USERS_IDS_QUERY,
+                new MapSqlParameterSource()
+                        .addValue("users_ids", usersIds),
+                JdbcFilmRepository::mapSetToHashMap);
 
-                    Map<Integer, List<Film>> userFilmsMap = new HashMap<>();
-
-                    while (rs.next()) {
-
-                        int userId = rs.getInt("user_id");
-
-                        Film film = mapRowTo(rs);
-
-                        if (!userFilmsMap.containsKey(userId)) {
-                            List<Film> filmsArray = new ArrayList<>();
-                            userFilmsMap.put(userId, filmsArray);
-                        }
-                        userFilmsMap.get(userId).add(film);
-                    }
-                    return userFilmsMap;
-                });
     }
 
 }
-

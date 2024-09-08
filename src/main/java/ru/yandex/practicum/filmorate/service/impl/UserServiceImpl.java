@@ -12,7 +12,6 @@ import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -84,21 +83,13 @@ public class UserServiceImpl implements UserService {
         if (userId < 0) {
             throw new ValidationException("Идентификатор пользователя должен быть положительным числом");
         }
-
         // Фильмы, которые поставили лайк пользователь X, делавший запрос
-        List<Film> filmsLikedByUser = filmRepository.getFilmsLikedByUser(userId);
-
-        Set<Integer> filmsIdsLikedByUser = filmsLikedByUser.stream()
-                .map(Film::getId)
-                .collect(Collectors.toSet());
+        Set<Integer> filmsIdsLikedByUser = filmRepository.getFilmsLikedByUser(userId);
 
         // Пользователи, которые поставили лайк те же самые фильмы, что и пользователь X
-        List<User> usersThatLikedSameFilms = userRepository.getUsersWithSameLikes(filmsIdsLikedByUser);
-        List<Integer> usersIds = usersThatLikedSameFilms.stream()
-                .map(User::getId)
-                .toList();
-        HashMap<Integer, List<Film>> foundUsersAllLikedFilms = filmRepository.getLikedFilmsByUsersIds(usersIds);
+        Set<Integer> usersIdsThatLikedSameFilms = userRepository.getUsersWithSameLikes(filmsIdsLikedByUser);
 
+        HashMap<Integer, List<Film>> foundUsersAllLikedFilms = filmRepository.getLikedFilmsByUsersIds(usersIdsThatLikedSameFilms);
 
         // Фильмы, которые не поставили лайк пользователь X, делавший запрос
         List<Film> recommendedFilms = new ArrayList<>();
@@ -107,7 +98,7 @@ public class UserServiceImpl implements UserService {
             List<Film> likedByOtherUser = entry.getValue();
 
             for (Film film : likedByOtherUser) {
-                if (!filmsLikedByUser.contains(film)) {
+                if (!filmsIdsLikedByUser.contains(film.getId())) {
                     recommendedFilms.add(film);
                 }
             }
