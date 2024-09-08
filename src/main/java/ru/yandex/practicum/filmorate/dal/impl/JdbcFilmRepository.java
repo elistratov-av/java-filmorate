@@ -177,40 +177,6 @@ public class JdbcFilmRepository implements FilmRepository {
             WHERE l.user_id IN (:users_ids)
             """;
 
-    // Попытка объединить запрос GET_BY_USERS_IDS_QUERY выше и запрос GET_USERS_WITH_COMMON_FILMS_BY_FILMS из репозитория пользователей - JdbcUserRepository
-//    private static final String GET_BY_USERS_TEST_QUERY = """
-//SELECT l2.user_id,
-//       f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name,
-//       g.genre_id, g.name AS genre_name, d.director_id, d.name AS director_name
-//FROM
-//    likes AS l1
-//INNER JOIN likes AS l2 ON
-//    l1.user_id <> l2.user_id
-//    AND l1.film_id IN (:films_ids)
-//INNER JOIN films AS f ON
-//    l2.film_id = f.film_id
-//LEFT JOIN mpa AS m ON
-//    f.mpa_id = m.mpa_id
-//LEFT JOIN film_genres AS fg ON
-//    f.film_id = fg.film_id
-//LEFT JOIN genres AS g ON
-//    fg.genre_id = g.genre_id
-//LEFT JOIN film_directors AS fd ON
-//    f.film_id = fd.film_id
-//LEFT JOIN directors AS d ON
-//    fd.director_id = d.director_id
-//WHERE
-//    l1.user_id = :user_idX
-//GROUP BY
-//       l2.user_id,
-//       f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name,
-//       g.genre_id, g.name, d.director_id, d.name
-//ORDER BY
-//    COUNT(l2.film_id) DESC
-//LIMIT 10
-//""";
-
-
     // endregion
 
     // region Mapper
@@ -470,18 +436,6 @@ public class JdbcFilmRepository implements FilmRepository {
                 new MapSqlParameterSource("user_id", userId),
                 JdbcFilmRepository::mapSetToFilmIds);
     }
-
-//    @Override
-//    public HashMap<Integer, List<Film>> getLikedFilmsByUsersIds(Set<Integer> films, int userId) {
-//        return jdbc.query(GET_BY_USERS_TEST_QUERY,
-//                new MapSqlParameterSource()
-//                        .addValue("films_ids", films)
-//                        .addValue("user_idX", userId),
-//                JdbcFilmRepository::mapSetToHashMap);
-//
-//        }
-//    }
-
 
     @Override
     public HashMap<Integer, List<Film>> getLikedFilmsByUsersIds(Set<Integer> usersIds) {
