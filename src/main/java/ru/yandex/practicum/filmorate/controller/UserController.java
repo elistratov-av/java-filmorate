@@ -103,6 +103,6 @@ public class UserController {
 
     @GetMapping("/{id}/recommendations")
     public Collection<Film> getRecommendedFilms(@PathVariable int id) {
-        return filmService.getRecommendedFilms(id);
+        return userService.getRecommendedFilms(id);
     }
 }

@@ -10,7 +10,6 @@ import ru.yandex.practicum.filmorate.model.*;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -21,9 +20,7 @@ public class FilmServiceImpl implements FilmService {
     private final UserRepository userRepository;
     private final GenreRepository genreRepository;
     private final MpaRepository mpaRepository;
-    private final FeedRepository feedRepository;
     private final DirectorRepository directorRepository;
-    private final ReviewRepository reviewRepository;
 
     @Override
     public Film get(int id) {
@@ -122,7 +119,6 @@ public class FilmServiceImpl implements FilmService {
         User user = userRepository.get(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден"));
         filmRepository.addLike(film, user);
-        addLikeFeed(userId, filmId, Feed.Operation.ADD);
     }
 
     @Override
@@ -132,17 +128,11 @@ public class FilmServiceImpl implements FilmService {
         User user = userRepository.get(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден"));
         filmRepository.deleteLike(film, user);
-        addLikeFeed(userId, filmId, Feed.Operation.REMOVE);
     }
 
     @Override
     public List<Film> getTopFilms(int maxCount) {
         return filmRepository.getTopFilms(maxCount);
-    }
-
-    @Override
-    public List<Film> getTopFilms(int count, Integer genreId, Integer year) {
-        return filmRepository.getTopFilms(count, genreId, year);
     }
 
     @Override
@@ -157,73 +147,6 @@ public class FilmServiceImpl implements FilmService {
             throw new NotFoundException("Режиссер с id = " + directorId + " не найден");
         }
         return films;
-    }
-
-    @Override
-    public List<Film> getCommonFilms(int userId, int friendId) {
-        User user = userRepository.get(userId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден"));
-        User friend = userRepository.get(friendId)
-                .orElseThrow(() -> new NotFoundException("Пользователь с id = " + friendId + " не найден"));
-        return filmRepository.getCommonFilms(user, friend);
-    }
-
-    private void addLikeFeed(Integer userId, Integer filmId, Feed.Operation operation) {
-        feedRepository.create(new Feed(userId, filmId, Feed.EventType.LIKE, operation));
-    }
-
-    @Override
-    public void deleteFilmById(int filmId) {
-        filmRepository.get(filmId)
-                .orElseThrow(() -> new NotFoundException("Фильм с id = " + filmId + " не найден"));
-
-        filmRepository.deleteFilmDirectors(filmId);
-        filmRepository.deleteFilmLikes(filmId);
-        filmRepository.deleteFilmGenres(filmId);
-        reviewRepository.deleteFilmReviewLikes(filmId);
-        reviewRepository.deleteFilmReviews(filmId);
-        filmRepository.deleteFilmById(filmId);
-    }
-
-    @Override
-    public List<Film> searchFilms(String query, String by) {
-        return filmRepository.searchFilms(query, by);
-    }
-
-    @Override
-    public List<Film> getRecommendedFilms(int userId) {
-        if (userId < 0) {
-            throw new ValidationException("Идентификатор пользователя должен быть положительным числом");
-        }
-
-        // Фильмы, которые поставили лайк пользователь X, делавший запрос
-        List<Film> filmsLikedByUser = filmRepository.getFilmsLikedByUser(userId);
-
-        Set<Integer> filmsIdsLikedByUser = filmsLikedByUser.stream()
-                    .map(Film::getId)
-                    .collect(Collectors.toSet());
-
-        // Пользователи, которые поставили лайк те же самые фильмы, что и пользователь X
-        List<User> usersThatLikedSameFilms = userRepository.getUsersWithSameLikes(filmsIdsLikedByUser);
-        List<Integer> usersIds = usersThatLikedSameFilms.stream()
-                .map(User::getId)
-                .toList();
-        HashMap<Integer, List<Film>> foundUsersAllLikedFilms = filmRepository.getLikedFilmsByUsersIds(usersIds);
-
-
-        // Фильмы, которые не поставили лайк пользователь X, делавший запрос
-        List<Film> recommendedFilms = new ArrayList<>();
-
-        for (Map.Entry<Integer, List<Film>> entry : foundUsersAllLikedFilms.entrySet()) {
-            List<Film> likedByOtherUser = entry.getValue();
-
-            for (Film film : likedByOtherUser) {
-                if (!filmsLikedByUser.contains(film)) {
-                    recommendedFilms.add(film);
-                }
-            }
-        }
-        return recommendedFilms;
     }
 
 }

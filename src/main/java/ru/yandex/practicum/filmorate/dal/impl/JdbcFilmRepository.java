@@ -211,7 +211,7 @@ public class JdbcFilmRepository implements FilmRepository {
 
     private static final String GET_BY_USER_ID_QUERY = """
             SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name,
-                g.genre_id, g.name AS genre_name
+                g.genre_id, g.name AS genre_name, d.director_id, d.name
             FROM
                 films AS f
             INNER JOIN likes AS l ON
@@ -222,11 +222,17 @@ public class JdbcFilmRepository implements FilmRepository {
                 f.film_id = fg.film_id
             LEFT JOIN genres AS g ON
                 fg.genre_id = g.genre_id
+            LEFT JOIN film_directors AS fd ON
+                f.film_id = fd.film_id
+            LEFT JOIN directors AS d ON
+                fd.director_id = d.director_id
+            
             WHERE
                 l.user_id = :user_id""";
 
     private static final String GET_BY_USERS_IDS_QUERY = """
-            SELECT l.user_id, f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name
+            SELECT l.user_id, f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name,
+                g.genre_id, g.name AS genre_name, d.director_id, d.name
             FROM
                 likes AS l
             INNER JOIN films AS f ON
@@ -237,6 +243,10 @@ public class JdbcFilmRepository implements FilmRepository {
                 f.film_id = fg.film_id
             LEFT JOIN genres AS g ON
                 fg.genre_id = g.genre_id
+            LEFT JOIN film_directors AS fd ON
+                f.film_id = fd.film_id
+            LEFT JOIN directors AS d ON
+                fd.director_id = d.director_id
             WHERE l.user_id IN (:users_ids)
             """;
 
@@ -514,9 +524,9 @@ public class JdbcFilmRepository implements FilmRepository {
     @Override
     public List<Film> getFilmsLikedByUser(int userId) {
 
-        return jdbc.query(GET_BY_USER_ID_QUERY,
-                new MapSqlParameterSource("user_id", userId),
-                JdbcFilmRepository::mapSetToList);
+            return jdbc.query(GET_BY_USER_ID_QUERY,
+                    new MapSqlParameterSource("user_id", userId),
+                    JdbcFilmRepository::mapSetToList);
     }
 
 
