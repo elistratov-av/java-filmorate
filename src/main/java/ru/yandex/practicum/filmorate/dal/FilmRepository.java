@@ -34,4 +34,6 @@ public interface FilmRepository {
     void deleteFilmGenres(int filmId);
 
     List<Film> searchFilms(String query, String by);
+
+    List<Film> getCommonFilms(User user, User friend);
 }

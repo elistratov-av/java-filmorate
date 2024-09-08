@@ -154,6 +154,15 @@ public class FilmServiceImpl implements FilmService {
         return films;
     }
 
+    @Override
+    public List<Film> getCommonFilms(int userId, int friendId) {
+        User user = userRepository.get(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден"));
+        User friend = userRepository.get(friendId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id = " + friendId + " не найден"));
+        return filmRepository.getCommonFilms(user, friend);
+    }
+
     private void addLikeFeed(Integer userId, Integer filmId, Feed.Operation operation) {
         feedRepository.create(new Feed(userId, filmId, Feed.EventType.LIKE, operation));
     }
