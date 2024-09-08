@@ -12,6 +12,7 @@ import ru.yandex.practicum.filmorate.model.User;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -91,6 +92,16 @@ public class JdbcUserRepository implements UserRepository {
                 .build();
     }
 
+    private static Set<Integer> mapSetToUserIds(ResultSet rs) throws SQLException {
+        Set<Integer> usersIds = new HashSet<>();
+
+        while(rs.next()) {
+            Integer userId = rs.getInt("user_id");
+            usersIds.add(userId);
+        }
+        return usersIds;
+    }
+
     // endregion
 
     @Override
@@ -166,11 +177,11 @@ public class JdbcUserRepository implements UserRepository {
     }
 
     @Override
-    public List<User> getUsersWithSameLikes(Set<Integer> films) {
+    public Set<Integer> getUsersWithSameLikes(Set<Integer> films) {
 
         return jdbc.query(GET_USERS_WITH_COMMON_FILMS_BY_FILMS,
                 new MapSqlParameterSource("films_id", films),
-                JdbcUserRepository::mapRowTo);
+                JdbcUserRepository::mapSetToUserIds);
     }
 
 }

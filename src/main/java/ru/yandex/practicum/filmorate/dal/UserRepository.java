@@ -23,5 +23,5 @@ public interface UserRepository {
 
     List<User> getMutualFriends(User user, User other);
 
-    List<User> getUsersWithSameLikes(Set<Integer> filmsId);
+    Set<Integer> getUsersWithSameLikes(Set<Integer> filmsId);
 }

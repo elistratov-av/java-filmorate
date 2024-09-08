@@ -6,6 +6,7 @@ import ru.yandex.practicum.filmorate.model.User;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface FilmRepository {
     Optional<Film> get(Integer id);
@@ -26,9 +27,8 @@ public interface FilmRepository {
 
     List<Film> getDirectorFilmsByLikes(Integer directorId);
 
-    List<Film> getFilmsLikedByUser(int userId);
+    Set<Integer> getFilmsLikedByUser(int userId);
 
-    HashMap<Integer, List<Film>> getLikedFilmsByUsersIds(List<Integer> usersIds);
+    HashMap<Integer, List<Film>> getLikedFilmsByUsersIds(Set<Integer> usersIds);
 
-//    List<Integer> getUsersWithSameLikes(List<Integer> filmsId);
 }

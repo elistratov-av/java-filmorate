@@ -21,20 +21,20 @@ public class JdbcFilmRepository implements FilmRepository {
     // region SQL queries
 
     private static final String FIND_ALL_QUERY = """
-            SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name mpa_name,
-                g.genre_id, g.name genre_name, d.director_id, d.name director_name
-            FROM
-            	films f
-            LEFT JOIN film_genres fg ON
-            	f.film_id = fg.film_id
-            LEFT JOIN GENRES g ON
-            	fg.genre_id = g.genre_id
-            LEFT JOIN mpa m ON
-            	f.mpa_id = m.mpa_id
-	        LEFT JOIN film_directors fd ON
-                f.film_id = fd.film_id
-            LEFT JOIN directors d ON
-                fd.director_id = d.director_id""";
+               SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name mpa_name,
+                   g.genre_id, g.name genre_name, d.director_id, d.name director_name
+               FROM
+               	films f
+               LEFT JOIN film_genres fg ON
+               	f.film_id = fg.film_id
+               LEFT JOIN GENRES g ON
+               	fg.genre_id = g.genre_id
+               LEFT JOIN mpa m ON
+               	f.mpa_id = m.mpa_id
+            LEFT JOIN film_directors fd ON
+                   f.film_id = fd.film_id
+               LEFT JOIN directors d ON
+                   fd.director_id = d.director_id""";
     private static final String GET_BY_ID_QUERY = """
             SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name mpa_name,
                 g.genre_id, g.name genre_name, d.director_id, d.name director_name
@@ -154,7 +154,7 @@ public class JdbcFilmRepository implements FilmRepository {
                 f.film_id = fd.film_id
             LEFT JOIN directors AS d ON
                 fd.director_id = d.director_id
-            
+                        
             WHERE
                 l.user_id = :user_id""";
     private static final String GET_BY_USERS_IDS_QUERY = """
@@ -176,6 +176,39 @@ public class JdbcFilmRepository implements FilmRepository {
                 fd.director_id = d.director_id
             WHERE l.user_id IN (:users_ids)
             """;
+
+    // Попытка объединить запрос GET_BY_USERS_IDS_QUERY выше и запрос GET_USERS_WITH_COMMON_FILMS_BY_FILMS из репозитория пользователей - JdbcUserRepository
+//    private static final String GET_BY_USERS_TEST_QUERY = """
+//SELECT l2.user_id,
+//       f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name,
+//       g.genre_id, g.name AS genre_name, d.director_id, d.name AS director_name
+//FROM
+//    likes AS l1
+//INNER JOIN likes AS l2 ON
+//    l1.user_id <> l2.user_id
+//    AND l1.film_id IN (:films_ids)
+//INNER JOIN films AS f ON
+//    l2.film_id = f.film_id
+//LEFT JOIN mpa AS m ON
+//    f.mpa_id = m.mpa_id
+//LEFT JOIN film_genres AS fg ON
+//    f.film_id = fg.film_id
+//LEFT JOIN genres AS g ON
+//    fg.genre_id = g.genre_id
+//LEFT JOIN film_directors AS fd ON
+//    f.film_id = fd.film_id
+//LEFT JOIN directors AS d ON
+//    fd.director_id = d.director_id
+//WHERE
+//    l1.user_id = :user_idX
+//GROUP BY
+//       l2.user_id,
+//       f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name,
+//       g.genre_id, g.name, d.director_id, d.name
+//ORDER BY
+//    COUNT(l2.film_id) DESC
+//LIMIT 10
+//""";
 
 
     // endregion
@@ -260,6 +293,50 @@ public class JdbcFilmRepository implements FilmRepository {
             }
         }
         return new ArrayList<>(films.values());
+    }
+
+    private static HashMap<Integer, List<Film>> mapSetToHashMap(ResultSet rs) throws SQLException {
+
+        HashMap<Integer, LinkedHashMap<Integer, Film>> userWithFilms = new LinkedHashMap<>();
+        while (rs.next()) {
+            Integer userId = rs.getInt("user_id");
+            Integer filmId = rs.getInt("film_id");
+
+            userWithFilms.putIfAbsent(userId, new LinkedHashMap<>());
+
+            Film film = userWithFilms.get(userId).get(filmId);
+            if (film == null) {
+                film = mapRowTo(rs);
+                userWithFilms.get(userId).put(film.getId(), film);
+                film.setGenres(new LinkedHashSet<>());
+                film.setDirectors(new LinkedHashSet<>());
+            }
+            Genre genre = mapRowToGenre(rs);
+            if (genre != null) {
+                film.getGenres().add(genre);
+            }
+            Director director = mapRowToDirector(rs);
+            if (director != null) {
+                film.getDirectors().add(director);
+            }
+        }
+        HashMap<Integer, List<Film>> resultMap = new HashMap<>();
+        for (Map.Entry<Integer, LinkedHashMap<Integer, Film>> entry : userWithFilms.entrySet()) {
+            // Преобразуем LinkedHashMap в List и добавляем в resultMap
+            resultMap.put(entry.getKey(), new ArrayList<>(entry.getValue().values()));
+        }
+
+        return resultMap;
+    }
+
+    private static Set<Integer> mapSetToFilmIds(ResultSet rs) throws SQLException {
+        Set<Integer> filmsIds = new HashSet<>();
+
+        while (rs.next()) {
+            Integer filmId = rs.getInt("film_id");
+            filmsIds.add(filmId);
+        }
+        return filmsIds;
     }
 
     // endregion
@@ -387,37 +464,34 @@ public class JdbcFilmRepository implements FilmRepository {
     }
 
     @Override
-    public List<Film> getFilmsLikedByUser(int userId) {
+    public Set<Integer> getFilmsLikedByUser(int userId) {
 
-            return jdbc.query(GET_BY_USER_ID_QUERY,
-                    new MapSqlParameterSource("user_id", userId),
-                    JdbcFilmRepository::mapSetToList);
+        return jdbc.query(GET_BY_USER_ID_QUERY,
+                new MapSqlParameterSource("user_id", userId),
+                JdbcFilmRepository::mapSetToFilmIds);
     }
+
+//    @Override
+//    public HashMap<Integer, List<Film>> getLikedFilmsByUsersIds(Set<Integer> films, int userId) {
+//        return jdbc.query(GET_BY_USERS_TEST_QUERY,
+//                new MapSqlParameterSource()
+//                        .addValue("films_ids", films)
+//                        .addValue("user_idX", userId),
+//                JdbcFilmRepository::mapSetToHashMap);
+//
+//        }
+//    }
 
 
     @Override
-    public HashMap<Integer, List<Film>> getLikedFilmsByUsersIds(List<Integer> userIds) {
+    public HashMap<Integer, List<Film>> getLikedFilmsByUsersIds(Set<Integer> usersIds) {
 
-        return (HashMap<Integer, List<Film>>) jdbc.query(GET_BY_USERS_IDS_QUERY,
-                new MapSqlParameterSource("users_ids", userIds),
-                rs -> {
+        return jdbc.query(GET_BY_USERS_IDS_QUERY,
+                new MapSqlParameterSource()
+                        .addValue("users_ids", usersIds),
+                JdbcFilmRepository::mapSetToHashMap);
 
-                    Map<Integer, List<Film>> userFilmsMap = new HashMap<>();
-
-                    while (rs.next()) {
-
-                        int userId = rs.getInt("user_id");
-
-                        Film film = mapRowTo(rs);
-
-                        if (!userFilmsMap.containsKey(userId)) {
-                            List<Film> filmsArray = new ArrayList<>();
-                            userFilmsMap.put(userId, filmsArray);
-                        }
-                        userFilmsMap.get(userId).add(film);
-                    }
-                    return userFilmsMap;
-                });
     }
-
 }
+
+
