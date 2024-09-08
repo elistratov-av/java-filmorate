@@ -150,6 +150,45 @@ public class JdbcFilmRepository implements FilmRepository {
             DELETE FROM likes
             WHERE film_id = :film_id""";
 
+    private static final String SEARCH_BY_TITLE_QUERY = """
+            SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name mpa_name,
+                g.genre_id, g.name genre_name, d.director_id, d.name director_name
+            FROM films f
+            LEFT JOIN film_genres fg ON f.film_id = fg.film_id
+            LEFT JOIN genres g ON fg.genre_id = g.genre_id
+            LEFT JOIN mpa m ON f.mpa_id = m.mpa_id
+            LEFT JOIN film_directors fd ON f.film_id = fd.film_id
+            LEFT JOIN directors d ON fd.director_id = d.director_id
+            WHERE LOWER(f.name) LIKE LOWER(:query)
+            ORDER BY (SELECT COUNT(*) FROM likes l WHERE l.film_id = f.film_id) DESC
+            """;
+
+    private static final String SEARCH_BY_DIRECTOR_QUERY = """
+            SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name mpa_name,
+                g.genre_id, g.name genre_name, d.director_id, d.name director_name
+            FROM films f
+            LEFT JOIN film_genres fg ON f.film_id = fg.film_id
+            LEFT JOIN genres g ON fg.genre_id = g.genre_id
+            LEFT JOIN mpa m ON f.mpa_id = m.mpa_id
+            LEFT JOIN film_directors fd ON f.film_id = fd.film_id
+            LEFT JOIN directors d ON fd.director_id = d.director_id
+            WHERE LOWER(d.name) LIKE LOWER(:query)
+            ORDER BY (SELECT COUNT(*) FROM likes l WHERE l.film_id = f.film_id) DESC
+            """;
+
+    private static final String SEARCH_BY_TITLE_AND_DIRECTOR_QUERY = """
+            SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name mpa_name,
+                g.genre_id, g.name genre_name, d.director_id, d.name director_name
+            FROM films f
+            LEFT JOIN film_genres fg ON f.film_id = fg.film_id
+            LEFT JOIN genres g ON fg.genre_id = g.genre_id
+            LEFT JOIN mpa m ON f.mpa_id = m.mpa_id
+            LEFT JOIN film_directors fd ON f.film_id = fd.film_id
+            LEFT JOIN directors d ON fd.director_id = d.director_id
+            WHERE LOWER(f.name) LIKE LOWER(:query) OR LOWER(d.name) LIKE LOWER(:query)
+            ORDER BY (SELECT COUNT(*) FROM likes l WHERE l.film_id = f.film_id) DESC
+            """;
+
     // endregion
 
     // region Mapper
@@ -371,4 +410,21 @@ public class JdbcFilmRepository implements FilmRepository {
         jdbc.update(DELETE_FILM_LIKES_QUERY,
                 new MapSqlParameterSource("film_id", filmId));
     }
+
+    @Override
+    public List<Film> searchFilms(String query, String by) {
+        String sql;
+        if ("title".equalsIgnoreCase(by)) {
+            sql = SEARCH_BY_TITLE_QUERY;
+        } else if ("director".equalsIgnoreCase(by)) {
+            sql = SEARCH_BY_DIRECTOR_QUERY;
+        } else if ("title,director".equalsIgnoreCase(by) || "director,title".equalsIgnoreCase(by)) {
+            sql = SEARCH_BY_TITLE_AND_DIRECTOR_QUERY;
+        } else {
+            throw new IllegalArgumentException("Invalid search parameter: " + by);
+        }
+
+        return jdbc.query(sql, new MapSqlParameterSource("query", "%" + query + "%"), JdbcFilmRepository::mapSetToList);
+    }
 }
+

@@ -22,4 +22,6 @@ public interface FilmService {
     List<Film> getDirectorFilms(int directorId, String sortBy);
 
     void deleteFilmById(int filmId);
+
+    List<Film> searchFilms(String query, String by);
 }

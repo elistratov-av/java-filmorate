@@ -170,4 +170,8 @@ public class FilmServiceImpl implements FilmService {
         reviewRepository.deleteFilmReviews(filmId);
         filmRepository.deleteFilmById(filmId);
     }
+    @Override
+    public List<Film> searchFilms(String query, String by) {
+        return filmRepository.searchFilms(query, by);
+    }
 }
