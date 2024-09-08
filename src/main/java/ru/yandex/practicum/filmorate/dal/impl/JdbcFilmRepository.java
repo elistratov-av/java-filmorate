@@ -30,14 +30,14 @@ public class JdbcFilmRepository implements FilmRepository {
             SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name mpa_name,
                 g.genre_id, g.name genre_name, d.director_id, d.name director_name
             FROM
-            	films f
+                films f
             LEFT JOIN film_genres fg ON
-            	f.film_id = fg.film_id
+                f.film_id = fg.film_id
             LEFT JOIN GENRES g ON
-            	fg.genre_id = g.genre_id
+                fg.genre_id = g.genre_id
             LEFT JOIN mpa m ON
-            	f.mpa_id = m.mpa_id
-	        LEFT JOIN film_directors fd ON
+                f.mpa_id = m.mpa_id
+            LEFT JOIN film_directors fd ON
                 f.film_id = fd.film_id
             LEFT JOIN directors d ON
                 fd.director_id = d.director_id""";
@@ -79,18 +79,16 @@ public class JdbcFilmRepository implements FilmRepository {
             "DELETE FROM likes WHERE film_id = :film_id AND user_id = :user_id";
     private static final String GET_TOP_FILMS = """
             SELECT gf.count, f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name mpa_name,
-                g.genre_id, g.name genre_name, d.director_id, d.name director_name
-            FROM (
+            	g.genre_id, g.name genre_name, d.director_id, d.name director_name
+            FROM films f
+            LEFT JOIN (
             	SELECT film_id, COUNT(user_id) count
             	FROM
             		likes l
             	GROUP BY
             		film_id
-            	ORDER BY
-            		COUNT(user_id) DESC
-            	LIMIT :max_count) gf
-            JOIN films f ON
-            	gf.film_id = f.FILM_ID
+            	) gf ON
+            	f.film_id = gf.FILM_ID
             LEFT JOIN film_genres fg ON
             	f.film_id = fg.film_id
             LEFT JOIN genres g ON
@@ -100,7 +98,9 @@ public class JdbcFilmRepository implements FilmRepository {
             LEFT JOIN film_directors fd ON
                 f.film_id = fd.film_id
             LEFT JOIN directors d ON
-                fd.director_id = d.director_id""";
+                fd.director_id = d.director_id
+            ORDER BY gf.count DESC
+            LIMIT :max_count""";
     private static final String GET_FILMS_BY_DIRECTOR_ID = """
             SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name mpa_name,
                 g.genre_id, g.name genre_name, d.director_id, d.name director_name
@@ -143,6 +143,12 @@ public class JdbcFilmRepository implements FilmRepository {
             LEFT JOIN directors d ON
                 fd.director_id = d.director_id
             WHERE fd.director_id = :director_id""";
+    private static final String DELETE_FILM_BY_ID_QUERY = """
+            DELETE FROM films
+            WHERE film_id = :film_id""";
+    private static final String DELETE_FILM_LIKES_QUERY = """
+            DELETE FROM likes
+            WHERE film_id = :film_id""";
 
     // endregion
 
@@ -274,7 +280,8 @@ public class JdbcFilmRepository implements FilmRepository {
         jdbc.batchUpdate(INSERT_FILM_GENRES_QUERY, batchArgs);
     }
 
-    private void deleteFilmGenres(int filmId) {
+    @Override
+    public void deleteFilmGenres(int filmId) {
         jdbc.update(DELETE_FILM_GENRES_QUERY, new MapSqlParameterSource("film_id", filmId));
     }
 
@@ -288,7 +295,8 @@ public class JdbcFilmRepository implements FilmRepository {
         jdbc.batchUpdate(INSERT_FILM_DIRECTOR_QUERY, batchArgs);
     }
 
-    private void deleteFilmDirectors(int filmId) {
+    @Override
+    public void deleteFilmDirectors(int filmId) {
         jdbc.update(DELETE_FILM_DIRECTORS_QUERY, new MapSqlParameterSource("film_id", filmId));
     }
 
@@ -350,5 +358,17 @@ public class JdbcFilmRepository implements FilmRepository {
         return jdbc.query(GET_DIRECTOR_FILMS_BY_LIKES,
                 new MapSqlParameterSource("director_id", directorId),
                 JdbcFilmRepository::mapSetToList);
+    }
+
+    @Override
+    public void deleteFilmById(int filmId) {
+        jdbc.update(DELETE_FILM_BY_ID_QUERY,
+                new MapSqlParameterSource("film_id", filmId));
+    }
+
+    @Override
+    public void deleteFilmLikes(int filmId) {
+        jdbc.update(DELETE_FILM_LIKES_QUERY,
+                new MapSqlParameterSource("film_id", filmId));
     }
 }

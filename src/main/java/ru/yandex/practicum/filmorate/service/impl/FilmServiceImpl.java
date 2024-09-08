@@ -23,6 +23,7 @@ public class FilmServiceImpl implements FilmService {
     private final MpaRepository mpaRepository;
     private final FeedRepository feedRepository;
     private final DirectorRepository directorRepository;
+    private final ReviewRepository reviewRepository;
 
     @Override
     public Film get(int id) {
@@ -155,5 +156,18 @@ public class FilmServiceImpl implements FilmService {
 
     private void addLikeFeed(Integer userId, Integer filmId, Feed.Operation operation) {
         feedRepository.create(new Feed(userId, filmId, Feed.EventType.LIKE, operation));
+    }
+
+    @Override
+    public void deleteFilmById(int filmId) {
+        filmRepository.get(filmId)
+                .orElseThrow(() -> new NotFoundException("Фильм с id = " + filmId + " не найден"));
+
+        filmRepository.deleteFilmDirectors(filmId);
+        filmRepository.deleteFilmLikes(filmId);
+        filmRepository.deleteFilmGenres(filmId);
+        reviewRepository.deleteFilmReviewLikes(filmId);
+        reviewRepository.deleteFilmReviews(filmId);
+        filmRepository.deleteFilmById(filmId);
     }
 }

@@ -83,4 +83,11 @@ public class FilmController {
         log.info("Получены фильм режиссера с id: {} отсортированных по {}", directorId, sortBy);
         return directorFilms;
     }
+
+    // DELETE /films/{filmId}
+    @DeleteMapping("/{filmId}")
+    public void deleteFilm(@PathVariable int filmId) {
+        filmService.deleteFilmById(filmId);
+        log.info("Фильм с id = \"{}\" удален", filmId);
+    }
 }

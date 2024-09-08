@@ -59,6 +59,15 @@ public class JdbcUserRepository implements UserRepository {
             		friends fr3
             	WHERE
             		fr3.user_id = :user2_id)""";
+    private static final String DELETE_USER_BY_ID_QUERY = """
+            DELETE FROM users
+            WHERE user_id = :user_id""";
+    private static final String DELETE_USER_LIKES_QUERY = """
+            DELETE FROM likes
+            WHERE user_id = :user_id""";
+    private static final String DELETE_USER_FRIENDS_QUERY = """
+            DELETE FROM friends
+            WHERE user_id = :user_id OR friend_id = :user_id""";
 
     // endregion
 
@@ -147,5 +156,23 @@ public class JdbcUserRepository implements UserRepository {
                 new MapSqlParameterSource("user1_id", user.getId())
                         .addValue("user2_id", other.getId()),
                 JdbcUserRepository::mapRowTo);
+    }
+
+    @Override
+    public void deleteUserById(int userId) {
+        jdbc.update(DELETE_USER_BY_ID_QUERY,
+                new MapSqlParameterSource("user_id", userId));
+    }
+
+    @Override
+    public void deleteUserLikes(int userId) {
+        jdbc.update(DELETE_USER_LIKES_QUERY,
+                new MapSqlParameterSource("user_id", userId));
+    }
+
+    @Override
+    public void deleteUserFriends(int userId) {
+        jdbc.update(DELETE_USER_FRIENDS_QUERY,
+                new MapSqlParameterSource("user_id", userId));
     }
 }

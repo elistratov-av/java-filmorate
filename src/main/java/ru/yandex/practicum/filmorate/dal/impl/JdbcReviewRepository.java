@@ -51,6 +51,31 @@ public class JdbcReviewRepository implements ReviewRepository {
                 GROUP BY review_id
                 HAVING review_id = :review_id), 0)
             WHERE review_id = :review_id""";
+    private static final String DELETE_REVIEW_LIKES_BY_FILM_REVIEW_QUERY = """
+            DELETE FROM review_likes
+            WHERE review_id IN (
+            	SELECT review_id
+            	FROM reviews r
+            	WHERE r.film_id = :film_id)""";
+    private static final String DELETE_FILM_REVIEWS_QUERY = """
+            DELETE FROM reviews
+            WHERE film_id = :film_id""";
+    private static final String DELETE_REVIEW_LIKES_BY_USER_REVIEW_QUERY = """
+            DELETE FROM review_likes
+            WHERE review_id IN (
+            	SELECT review_id
+            	FROM reviews r
+            	WHERE r.user_id = :user_id)""";
+    private static final String DELETE_USER_REVIEWS_QUERY = """
+            DELETE FROM REVIEWS
+            WHERE USER_ID = :user_id""";
+    private static final String FIND_USER_REVIEW_LIKES_QUERY = """
+            SELECT review_id
+            FROM review_likes
+            WHERE user_id = :user_id""";
+    private static final String DELETE_REVIEW_LIKES_BY_USER_QUERY = """
+            DELETE FROM REVIEW_LIKES
+            WHERE USER_ID = :user_id""";
 
     // endregion
 
@@ -174,5 +199,50 @@ public class JdbcReviewRepository implements ReviewRepository {
     @Override
     public void deleteDislike(Review review, User user) {
         deleteLike(review.getReviewId(), user.getId(), false);
+    }
+
+    @Override
+    public void deleteFilmReviewLikes(int filmId) {
+        jdbc.update(DELETE_REVIEW_LIKES_BY_FILM_REVIEW_QUERY,
+                new MapSqlParameterSource("film_id", filmId));
+    }
+
+    @Override
+    public void deleteFilmReviews(int filmId) {
+        jdbc.update(DELETE_FILM_REVIEWS_QUERY,
+                new MapSqlParameterSource("film_id", filmId));
+    }
+
+    @Override
+    public void deleteUserReviewLikes(int userId) {
+        jdbc.update(DELETE_REVIEW_LIKES_BY_USER_REVIEW_QUERY,
+                new MapSqlParameterSource("user_id", userId));
+    }
+
+    @Override
+    public void deleteUserReviews(int userId) {
+        jdbc.update(DELETE_USER_REVIEWS_QUERY,
+                new MapSqlParameterSource("user_id", userId));
+    }
+
+    @Override
+    public List<Integer> findUserReviewLikes(int userId) {
+        return jdbc.query(FIND_USER_REVIEW_LIKES_QUERY,
+                new MapSqlParameterSource("user_id", userId),
+                (ResultSet rs, int rowNum) -> rs.getInt("review_id"));
+    }
+
+    @Override
+    public void deleteReviewLikesByUser(int userId) {
+        jdbc.update(DELETE_REVIEW_LIKES_BY_USER_QUERY,
+                new MapSqlParameterSource("user_id", userId));
+    }
+
+    @Override
+    public void refreshRatings(List<Integer> ids) {
+        MapSqlParameterSource[] batchArgs = ids.stream()
+                .map(id -> new MapSqlParameterSource("review_id", id))
+                .toArray(MapSqlParameterSource[]::new);
+        jdbc.batchUpdate(REFRESH_RATING_QYERY, batchArgs);
     }
 }
