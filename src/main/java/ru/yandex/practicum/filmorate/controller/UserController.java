@@ -90,4 +90,11 @@ public class UserController {
         log.info("Получен список последних событий на платформе друзей пользователя с id = \"{}\"", id);
         return feed;
     }
+
+    // DELETE /users/{userId}
+    @DeleteMapping("/{userId}")
+    public void deleteUser(@PathVariable int userId) {
+        userService.deleteUserById(userId);
+        log.info("Пользователь с id = \"{}\" удален", userId);
+    }
 }

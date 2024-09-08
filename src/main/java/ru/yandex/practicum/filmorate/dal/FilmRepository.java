@@ -24,4 +24,12 @@ public interface FilmRepository {
     List<Film> getFilmsByDirector(Integer directorId);
 
     List<Film> getDirectorFilmsByLikes(Integer directorId);
+
+    void deleteFilmDirectors(int filmId);
+
+    void deleteFilmById(int filmId);
+
+    void deleteFilmLikes(int filmId);
+
+    void deleteFilmGenres(int filmId);
 }

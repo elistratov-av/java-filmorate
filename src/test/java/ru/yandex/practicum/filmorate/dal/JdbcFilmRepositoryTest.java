@@ -139,6 +139,6 @@ class JdbcFilmRepositoryTest {
         List<Film> films = jdbc.getTopFilms(10);
 
         assertThat(films)
-                .hasSize(1);
+                .hasSize(3);
     }
 }

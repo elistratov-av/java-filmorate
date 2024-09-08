@@ -21,4 +21,10 @@ public interface UserRepository {
     List<User> getFriends(User user);
 
     List<User> getMutualFriends(User user, User other);
+
+    void deleteUserById(int userId);
+
+    void deleteUserLikes(int userId);
+
+    void deleteUserFriends(int userId);
 }

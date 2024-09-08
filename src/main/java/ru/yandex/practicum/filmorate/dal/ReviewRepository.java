@@ -26,4 +26,18 @@ public interface ReviewRepository {
     void deleteLike(Review review, User user);
 
     void deleteDislike(Review review, User user);
+
+    void deleteFilmReviewLikes(int filmId);
+
+    void deleteFilmReviews(int filmId);
+
+    void deleteUserReviewLikes(int userId);
+
+    void deleteUserReviews(int userId);
+
+    List<Integer> findUserReviewLikes(int userId);
+
+    void deleteReviewLikesByUser(int userId);
+
+    void refreshRatings(List<Integer> ids);
 }
