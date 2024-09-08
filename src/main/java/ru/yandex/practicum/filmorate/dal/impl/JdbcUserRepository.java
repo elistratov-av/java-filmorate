@@ -104,7 +104,7 @@ public class JdbcUserRepository implements UserRepository {
     private static Set<Integer> mapSetToUserIds(ResultSet rs) throws SQLException {
         Set<Integer> usersIds = new HashSet<>();
 
-        while(rs.next()) {
+        while (rs.next()) {
             Integer userId = rs.getInt("user_id");
             usersIds.add(userId);
         }
