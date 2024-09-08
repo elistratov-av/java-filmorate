@@ -3,8 +3,10 @@ package ru.yandex.practicum.filmorate.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dal.FeedRepository;
 import ru.yandex.practicum.filmorate.dal.UserRepository;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Feed;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 
@@ -15,6 +17,7 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
     @Qualifier("jdbcUserRepository")
     private final UserRepository userRepository;
+    private final FeedRepository feedRepository;
 
     @Override
     public User get(int id) {
@@ -46,6 +49,7 @@ public class UserServiceImpl implements UserService {
         User friend = userRepository.get(friendId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id = " + friendId + " не найден"));
         userRepository.addFriend(user, friend);
+        addFriendFeed(userId, friendId, Feed.Operation.ADD);
     }
 
     @Override
@@ -55,6 +59,7 @@ public class UserServiceImpl implements UserService {
         User friend = userRepository.get(friendId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id = " + friendId + " не найден"));
         userRepository.deleteFriend(user, friend);
+        addFriendFeed(userId, friendId, Feed.Operation.REMOVE);
     }
 
     @Override
@@ -71,5 +76,16 @@ public class UserServiceImpl implements UserService {
         User other = userRepository.get(otherId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id = " + otherId + " не найден"));
         return userRepository.getMutualFriends(user, other);
+    }
+
+    @Override
+    public List<Feed> getFeed(int userId) {
+        User user = userRepository.get(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден"));
+        return feedRepository.findFeedByUserId(user.getId());
+    }
+
+    private void addFriendFeed(Integer userId, Integer friendId, Feed.Operation operation) {
+        feedRepository.create(new Feed(userId, friendId, Feed.EventType.FRIEND, operation));
     }
 }

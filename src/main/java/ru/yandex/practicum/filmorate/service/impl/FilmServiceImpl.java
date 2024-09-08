@@ -21,6 +21,7 @@ public class FilmServiceImpl implements FilmService {
     private final UserRepository userRepository;
     private final GenreRepository genreRepository;
     private final MpaRepository mpaRepository;
+    private final FeedRepository feedRepository;
     private final DirectorRepository directorRepository;
 
     @Override
@@ -120,6 +121,7 @@ public class FilmServiceImpl implements FilmService {
         User user = userRepository.get(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден"));
         filmRepository.addLike(film, user);
+        addLikeFeed(userId, filmId, Feed.Operation.ADD);
     }
 
     @Override
@@ -129,6 +131,7 @@ public class FilmServiceImpl implements FilmService {
         User user = userRepository.get(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден"));
         filmRepository.deleteLike(film, user);
+        addLikeFeed(userId, filmId, Feed.Operation.REMOVE);
     }
 
     @Override
@@ -148,5 +151,9 @@ public class FilmServiceImpl implements FilmService {
             throw new NotFoundException("Режиссер с id = " + directorId + " не найден");
         }
         return films;
+    }
+
+    private void addLikeFeed(Integer userId, Integer filmId, Feed.Operation operation) {
+        feedRepository.create(new Feed(userId, filmId, Feed.EventType.LIKE, operation));
     }
 }

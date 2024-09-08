@@ -4,10 +4,12 @@ import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dal.FeedRepository;
 import ru.yandex.practicum.filmorate.dal.FilmRepository;
 import ru.yandex.practicum.filmorate.dal.ReviewRepository;
 import ru.yandex.practicum.filmorate.dal.UserRepository;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Feed;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.ReviewService;
@@ -22,6 +24,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final FilmRepository filmRepository;
     @Qualifier("jdbcUserRepository")
     private final UserRepository userRepository;
+    private final FeedRepository feedRepository;
 
     @Override
     public Review get(int id) {
@@ -54,18 +57,25 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     public Review create(Review review) {
         validate(review, false);
-        return reviewRepository.create(review);
+        Review newReview = reviewRepository.create(review);
+        addReviewFeed(newReview.getUserId(), newReview.getReviewId(), Feed.Operation.ADD);
+        return newReview;
     }
 
     @Override
     public Review update(Review newReview) {
         validate(newReview, true);
-        return reviewRepository.update(newReview);
+        Review updatedReview = reviewRepository.update(newReview);
+        addReviewFeed(newReview.getUserId(), newReview.getReviewId(), Feed.Operation.UPDATE);
+        return updatedReview;
     }
 
     @Override
     public void deleteById(int id) {
+        Review toDelete = reviewRepository.get(id).orElseThrow(
+                () -> new NotFoundException("Отзыв с id = " + id + " не найден"));
         reviewRepository.deleteById(id);
+        addReviewFeed(toDelete.getUserId(), toDelete.getReviewId(), Feed.Operation.REMOVE);
     }
 
     @Override
@@ -102,5 +112,9 @@ public class ReviewServiceImpl implements ReviewService {
         User user = userRepository.get(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден"));
         reviewRepository.deleteDislike(review, user);
+    }
+
+    private void addReviewFeed(Integer userId, Integer reviewId, Feed.Operation operation) {
+        feedRepository.create(new Feed(userId, reviewId, Feed.EventType.REVIEW, operation));
     }
 }

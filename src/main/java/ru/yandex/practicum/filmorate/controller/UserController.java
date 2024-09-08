@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import ru.yandex.practicum.filmorate.model.Feed;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 import ru.yandex.practicum.filmorate.service.impl.UserValidator;
@@ -81,5 +82,12 @@ public class UserController {
         List<User> friends = userService.getMutualFriends(id, otherId);
         log.info("Получен список общих друзей для пользователей с id = \"{}\" и otherId = \"{}\"", id, otherId);
         return friends;
+    }
+
+    @GetMapping("/{id}/feed")
+    public Collection<Feed> getFeed(@PathVariable int id) {
+        List<Feed> feed = userService.getFeed(id);
+        log.info("Получен список последних событий на платформе друзей пользователя с id = \"{}\"", id);
+        return feed;
     }
 }
