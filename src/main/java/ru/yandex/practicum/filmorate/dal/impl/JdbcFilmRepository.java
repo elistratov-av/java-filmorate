@@ -188,6 +188,33 @@ public class JdbcFilmRepository implements FilmRepository {
             WHERE LOWER(f.name) LIKE LOWER(:query) OR LOWER(d.name) LIKE LOWER(:query)
             ORDER BY (SELECT COUNT(*) FROM likes l WHERE l.film_id = f.film_id) DESC
             """;
+    private static final String GET_COMMON_FILMS_QUERY = """
+            SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name mpa_name,
+                g.genre_id, g.name genre_name, d.director_id, d.name director_name
+            FROM (
+            	SELECT l.film_id
+            	FROM
+            		likes l
+	            JOIN likes lk ON
+                    lk.film_id = l.film_id
+	            WHERE l.user_id = :user_id AND lk.user_id = :friend_id
+            	GROUP BY
+            		l.film_id
+            	ORDER BY
+            		COUNT(l.user_id) DESC) gf
+            JOIN films f ON
+            	gf.film_id = f.FILM_ID
+            LEFT JOIN film_genres fg ON
+            	f.film_id = fg.film_id
+            LEFT JOIN genres g ON
+            	fg.genre_id = g.genre_id
+            LEFT JOIN mpa m ON
+            	f.mpa_id = m.mpa_id
+            LEFT JOIN film_directors fd ON
+                f.film_id = fd.film_id
+            LEFT JOIN directors d ON
+                fd.director_id = d.director_id
+            """;
 
     // endregion
 
@@ -425,6 +452,14 @@ public class JdbcFilmRepository implements FilmRepository {
         }
 
         return jdbc.query(sql, new MapSqlParameterSource("query", "%" + query + "%"), JdbcFilmRepository::mapSetToList);
+    }
+
+    @Override
+    public List<Film> getCommonFilms(User user, User friend) {
+        return jdbc.query(GET_COMMON_FILMS_QUERY,
+                new MapSqlParameterSource("user_id", user.getId())
+                        .addValue("friend_id", friend.getId()),
+                JdbcFilmRepository::mapSetToList);
     }
 }
 
