@@ -98,9 +98,7 @@ public class JdbcFilmRepository implements FilmRepository {
             LEFT JOIN film_directors fd ON
                 f.film_id = fd.film_id
             LEFT JOIN directors d ON
-                fd.director_id = d.director_id
-            ORDER BY gf.count DESC
-            LIMIT :max_count""";
+                fd.director_id = d.director_id""";
     private static final String GET_FILMS_BY_DIRECTOR_ID = """
             SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name mpa_name,
                 g.genre_id, g.name genre_name, d.director_id, d.name director_name
@@ -195,9 +193,9 @@ public class JdbcFilmRepository implements FilmRepository {
             	SELECT l.film_id
             	FROM
             		likes l
-	            JOIN likes lk ON
+                JOIN likes lk ON
                     lk.film_id = l.film_id
-	            WHERE l.user_id = :user_id AND lk.user_id = :friend_id
+                WHERE l.user_id = :user_id AND lk.user_id = :friend_id
             	GROUP BY
             		l.film_id
             	ORDER BY
@@ -403,8 +401,32 @@ public class JdbcFilmRepository implements FilmRepository {
 
     @Override
     public List<Film> getTopFilms(int maxCount) {
-        return jdbc.query(GET_TOP_FILMS,
+        return jdbc.query(GET_TOP_FILMS
+                        + "\nORDER BY gf.count DESC"
+                        + "\nLIMIT :max_count",
                 new MapSqlParameterSource("max_count", maxCount),
+                JdbcFilmRepository::mapSetToList);
+    }
+
+    @Override
+    public List<Film> getTopFilms(int count, Integer genreId, Integer year) {
+        //WHERE g.genre_id = 1 AND YEAR(f.release_date) = 2003
+        ArrayList<String> predicates = new ArrayList<>();
+        if (genreId != null) {
+            predicates.add("g.genre_id = :genreId");
+        }
+        if (year != null) {
+            predicates.add("YEAR(f.release_date) = :year");
+        }
+
+        String predicate = "\nWHERE " + String.join(" AND ", predicates);
+        return jdbc.query(GET_TOP_FILMS
+                        + predicate
+                        + "\nORDER BY gf.count DESC"
+                        + "\nLIMIT :max_count",
+                new MapSqlParameterSource("max_count", count)
+                        .addValue("genreId", genreId)
+                        .addValue("year", year),
                 JdbcFilmRepository::mapSetToList);
     }
 

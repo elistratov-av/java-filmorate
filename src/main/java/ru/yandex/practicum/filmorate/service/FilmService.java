@@ -19,6 +19,8 @@ public interface FilmService {
 
     List<Film> getTopFilms(int maxCount);
 
+    List<Film> getTopFilms(int count, Integer genreId, Integer year);
+
     List<Film> getDirectorFilms(int directorId, String sortBy);
 
     void deleteFilmById(int filmId);

@@ -21,6 +21,8 @@ public interface FilmRepository {
 
     List<Film> getTopFilms(int maxCount);
 
+    List<Film> getTopFilms(int count, Integer genreId, Integer year);
+
     List<Film> getFilmsByDirector(Integer directorId);
 
     List<Film> getDirectorFilmsByLikes(Integer directorId);
