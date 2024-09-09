@@ -114,8 +114,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<Film> getRecommendedFilms(int userId) {
-        if (userId < 0) {
-            throw new ValidationException("Идентификатор пользователя должен быть положительным числом");
+        if (userId < 1) {
+            throw new ValidationException("Идентификатор пользователя должен быть целым и положительным числом");
         }
         // Фильмы, которые поставили лайк пользователь X, делавший запрос
         Set<Integer> filmsIdsLikedByUser = filmRepository.getFilmsLikedByUser(userId);
