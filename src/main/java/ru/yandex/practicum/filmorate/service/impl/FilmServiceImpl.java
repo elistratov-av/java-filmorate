@@ -141,6 +141,11 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
+    public List<Film> getTopFilms(int count, Integer genreId, Integer year) {
+        return filmRepository.getTopFilms(count, genreId, year);
+    }
+
+    @Override
     public List<Film> getDirectorFilms(int directorId, String sortBy) {
         List<Film> films = null;
         if ("likes".equalsIgnoreCase(sortBy)) {
