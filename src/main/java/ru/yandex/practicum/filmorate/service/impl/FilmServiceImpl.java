@@ -21,6 +21,8 @@ public class FilmServiceImpl implements FilmService {
     private final GenreRepository genreRepository;
     private final MpaRepository mpaRepository;
     private final DirectorRepository directorRepository;
+    private final ReviewRepository reviewRepository;
+    private final FeedRepository feedRepository;
 
     @Override
     public Film get(int id) {
@@ -136,6 +138,11 @@ public class FilmServiceImpl implements FilmService {
     }
 
     @Override
+    public List<Film> getTopFilms(int count, Integer genreId, Integer year) {
+        return filmRepository.getTopFilms(count, genreId, year);
+    }
+
+    @Override
     public List<Film> getDirectorFilms(int directorId, String sortBy) {
         List<Film> films = null;
         if ("likes".equalsIgnoreCase(sortBy)) {
@@ -147,6 +154,37 @@ public class FilmServiceImpl implements FilmService {
             throw new NotFoundException("Режиссер с id = " + directorId + " не найден");
         }
         return films;
+    }
+
+    @Override
+    public List<Film> getCommonFilms(int userId, int friendId) {
+        User user = userRepository.get(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден"));
+        User friend = userRepository.get(friendId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id = " + friendId + " не найден"));
+        return filmRepository.getCommonFilms(user, friend);
+    }
+
+    private void addLikeFeed(Integer userId, Integer filmId, Feed.Operation operation) {
+        feedRepository.create(new Feed(userId, filmId, Feed.EventType.LIKE, operation));
+    }
+
+    @Override
+    public void deleteFilmById(int filmId) {
+        filmRepository.get(filmId)
+                .orElseThrow(() -> new NotFoundException("Фильм с id = " + filmId + " не найден"));
+
+        filmRepository.deleteFilmDirectors(filmId);
+        filmRepository.deleteFilmLikes(filmId);
+        filmRepository.deleteFilmGenres(filmId);
+        reviewRepository.deleteFilmReviewLikes(filmId);
+        reviewRepository.deleteFilmReviews(filmId);
+        filmRepository.deleteFilmById(filmId);
+    }
+
+    @Override
+    public List<Film> searchFilms(String query, String by) {
+        return filmRepository.searchFilms(query, by);
     }
 
 }
