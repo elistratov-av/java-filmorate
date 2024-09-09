@@ -10,4 +10,6 @@ public interface FeedRepository {
     List<Feed> findFeedByUserId(Integer userId);
 
     void deleteUserFeed(int userId);
+
+    void deleteFilmFeed(int filmId);
 }
