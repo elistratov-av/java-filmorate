@@ -30,11 +30,13 @@ public interface FilmRepository {
     List<Film> getDirectorFilmsByLikes(Integer directorId);
 
     Set<Integer> getFilmsLikedByUser(int userId);
+
     void deleteFilmDirectors(int filmId);
 
     void deleteFilmById(int filmId);
 
     HashMap<Integer, List<Film>> getLikedFilmsByUsersIds(Set<Integer> usersIds);
+
     void deleteFilmLikes(int filmId);
 
     void deleteFilmGenres(int filmId);
