@@ -52,7 +52,6 @@ public class JdbcFilmRepository implements FilmRepository {
                 fd.director_id = d.director_id
             WHERE
             	f.film_id = :id""";
-
     private static final String INSERT_QUERY = """
             INSERT INTO films (name, description, release_date, duration, mpa_id)
             VALUES(:name, :desc, :rel_date, :duration, :mpa_id)""";

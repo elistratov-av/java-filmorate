@@ -28,5 +28,4 @@ public interface FilmService {
     List<Film> searchFilms(String query, String by);
 
     List<Film> getCommonFilms(int userId, int friendId);
-
 }
