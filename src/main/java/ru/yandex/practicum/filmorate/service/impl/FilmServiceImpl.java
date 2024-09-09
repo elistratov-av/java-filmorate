@@ -177,6 +177,7 @@ public class FilmServiceImpl implements FilmService {
         filmRepository.get(filmId)
                 .orElseThrow(() -> new NotFoundException("Фильм с id = " + filmId + " не найден"));
 
+        feedRepository.deleteFilmFeed(filmId);
         filmRepository.deleteFilmDirectors(filmId);
         filmRepository.deleteFilmLikes(filmId);
         filmRepository.deleteFilmGenres(filmId);
