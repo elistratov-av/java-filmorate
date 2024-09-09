@@ -415,7 +415,7 @@ public class JdbcFilmRepository implements FilmRepository {
         if (genreId != null) {
             predicates.add("g.genre_id = :genreId");
         }
-        if (year!= null) {
+        if (year != null) {
             predicates.add("YEAR(f.release_date) = :year");
         }
 
