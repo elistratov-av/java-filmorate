@@ -106,4 +106,5 @@ public class UserServiceImpl implements UserService {
         reviewRepository.refreshRatings(ids);
         userRepository.deleteUserById(userId);
     }
+
 }
