@@ -28,7 +28,6 @@ public class UserServiceImpl implements UserService {
     private final ReviewRepository reviewRepository;
     private final FeedRepository feedRepository;
 
-    private final FilmRepository filmRepository;
 
     @Override
     public User get(int id) {

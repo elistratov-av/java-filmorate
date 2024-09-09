@@ -45,8 +45,5 @@ public interface FilmRepository {
 
     List<Film> getCommonFilms(User user, User friend);
 
-    Set<Integer> getFilmsLikedByUser(int userId);
-
-    HashMap<Integer, List<Film>> getLikedFilmsByUsersIds(Set<Integer> usersIds);
 
 }
