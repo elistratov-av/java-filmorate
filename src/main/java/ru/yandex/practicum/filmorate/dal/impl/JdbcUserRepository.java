@@ -72,7 +72,7 @@ public class JdbcUserRepository implements UserRepository {
             WHERE user_id = :user_id OR friend_id = :user_id""";
 
     private static final String GET_USERS_WITH_COMMON_FILMS_BY_FILMS = """
-            SELECT l.user_id, u.email, u.login, u.user_name, u.birthday
+            SELECT l.user_id
             FROM
                 likes AS l
             INNER JOIN users AS u ON
@@ -80,7 +80,7 @@ public class JdbcUserRepository implements UserRepository {
             WHERE
                 l.film_id IN (:films_id)
             GROUP BY
-                l.user_id, u.email, u.login, u.user_name, u.birthday
+                l.user_id
             ORDER
                 BY COUNT(l.film_id) DESC
             LIMIT 10
