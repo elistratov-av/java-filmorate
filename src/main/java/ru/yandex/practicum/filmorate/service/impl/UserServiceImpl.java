@@ -4,9 +4,12 @@ import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dal.FeedRepository;
 import ru.yandex.practicum.filmorate.dal.FilmRepository;
+import ru.yandex.practicum.filmorate.dal.ReviewRepository;
 import ru.yandex.practicum.filmorate.dal.UserRepository;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Feed;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
@@ -18,7 +21,8 @@ import java.util.*;
 public class UserServiceImpl implements UserService {
     @Qualifier("jdbcUserRepository")
     private final UserRepository userRepository;
-
+    private final FeedRepository feedRepository;
+    private final ReviewRepository reviewRepository;
     private final FilmRepository filmRepository;
 
     @Override
@@ -76,6 +80,31 @@ public class UserServiceImpl implements UserService {
         User other = userRepository.get(otherId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id = " + otherId + " не найден"));
         return userRepository.getMutualFriends(user, other);
+    }
+
+    @Override
+    public List<Feed> getFeed(int userId) {
+        User user = userRepository.get(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден"));
+        return feedRepository.findFeedByUserId(user.getId());
+    }
+
+
+
+    @Override
+    public void deleteUserById(int userId) {
+        User user = userRepository.get(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден"));
+
+        userRepository.deleteUserLikes(userId);
+        feedRepository.deleteUserFeed(userId);
+        userRepository.deleteUserFriends(userId);
+        reviewRepository.deleteUserReviewLikes(userId);
+        reviewRepository.deleteUserReviews(userId);
+        List<Integer> ids = reviewRepository.findUserReviewLikes(userId);
+        reviewRepository.deleteReviewLikesByUser(userId);
+        reviewRepository.refreshRatings(ids);
+        userRepository.deleteUserById(userId);
     }
 
     @Override
