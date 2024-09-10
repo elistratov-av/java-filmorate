@@ -104,7 +104,6 @@ public class UserController {
 
     @GetMapping("/{id}/recommendations")
     public Collection<Film> getRecommendedFilms(@PathVariable int id) {
-
             List<Film> recommendedFilms = userService.getRecommendedFilms(id);
             log.info("Получен список рекомендации для пользователя с id = \"{}\"", id);
             return recommendedFilms;

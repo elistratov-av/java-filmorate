@@ -67,7 +67,7 @@ public class ReviewServiceImpl implements ReviewService {
         validate(newReview, true);
         reviewRepository.update(newReview);
         Review updatedReview = get(newReview.getReviewId());
-        addReviewFeed(newReview.getUserId(), newReview.getReviewId(), Feed.Operation.UPDATE);
+        addReviewFeed(updatedReview.getUserId(), newReview.getReviewId(), Feed.Operation.UPDATE);
         return updatedReview;
     }
 
