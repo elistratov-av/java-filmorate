@@ -8,4 +8,8 @@ public interface FeedRepository {
     Feed create(Feed feed);
 
     List<Feed> findFeedByUserId(Integer userId);
+
+    void deleteUserFeed(int userId);
+
+    void deleteFilmFeed(int filmId);
 }
