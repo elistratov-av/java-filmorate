@@ -86,7 +86,7 @@ public class FilmServiceImpl implements FilmService {
                     .orElseThrow(() -> new ValidationException("Рейтинг с id = " + mpaId + " не найден"));
         }
 
-        List<Genre> genres = null;
+        List<Genre> genres = List.of();
         if (newFilm.getGenres() != null) {
             final List<Integer> genreIds = newFilm.getGenres().stream().map(Genre::getId).toList();
             genres = genreRepository.getByIds(genreIds);
@@ -95,7 +95,7 @@ public class FilmServiceImpl implements FilmService {
             }
         }
 
-        List<Director> directors = null;
+        List<Director> directors = List.of();
         if (newFilm.getDirectors() != null) {
             final List<Integer> directorIds = newFilm.getDirectors().stream().map(Director::getId).toList();
             directors = directorRepository.getByIds(directorIds);
@@ -109,8 +109,8 @@ public class FilmServiceImpl implements FilmService {
         f.setReleaseDate(newFilm.getReleaseDate());
         f.setDuration(newFilm.getDuration());
         f.setMpa(mpa);
-        f.setGenres(genres != null ? new LinkedHashSet<>(genres) : null);
-        f.setDirectors(directors != null ? new LinkedHashSet<>(directors) : null);
+        f.setGenres(new LinkedHashSet<>(genres));
+        f.setDirectors(new LinkedHashSet<>(directors));
 
         return filmRepository.update(f);
     }
