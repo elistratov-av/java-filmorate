@@ -28,12 +28,6 @@ public class JdbcFeedRepository implements FeedRepository {
             FROM feed
             WHERE user_id = :user_id
             ORDER BY event_id""";
-    private static final String DELETE_USER_FEED_QUERY = """
-            DELETE FROM feed
-            WHERE user_id = :user_id OR (event_type = 'FRIEND' AND entity_id = :user_id)""";
-    private static final String DELETE_FILM_FEED_QUERY = """
-            DELETE FROM feed
-            WHERE event_type IN ('LIKE', 'REVIEW') AND entity_id = :film_id""";
     // endregion
 
     // region Mapper
@@ -70,17 +64,5 @@ public class JdbcFeedRepository implements FeedRepository {
         return jdbc.query(SELECT_BY_USER_ID_QUERY,
                 new MapSqlParameterSource("user_id", id),
                 JdbcFeedRepository::mapRowTo);
-    }
-
-    @Override
-    public void deleteUserFeed(int userId) {
-        jdbc.update(DELETE_USER_FEED_QUERY,
-                new MapSqlParameterSource("user_id", userId));
-    }
-
-    @Override
-    public void deleteFilmFeed(int filmId) {
-        jdbc.update(DELETE_FILM_FEED_QUERY,
-                new MapSqlParameterSource("film_id", filmId));
     }
 }
