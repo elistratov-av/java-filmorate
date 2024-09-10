@@ -46,6 +46,9 @@ public class UserController {
     public User create(@Valid @RequestBody User user) {
         // проверяем выполнение необходимых условий
         userValidator.validate(user, false);
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
         user = userService.create(user);
         log.info("Создан пользователь: {}", user);
         return user;
