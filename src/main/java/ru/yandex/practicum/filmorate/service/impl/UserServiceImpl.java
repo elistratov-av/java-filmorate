@@ -97,7 +97,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteUserById(int userId) {
-        User user = userRepository.get(userId)
+        userRepository.get(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден"));
 
         userRepository.deleteUserLikes(userId);
