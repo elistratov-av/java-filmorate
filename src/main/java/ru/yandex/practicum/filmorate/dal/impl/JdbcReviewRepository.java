@@ -109,7 +109,7 @@ public class JdbcReviewRepository implements ReviewRepository {
 
     @Override
     public List<Review> findByFilmId(int filmId, int count) {
-        String query = FIND_ALL_QUERY + "\nWHERE film_id = :film_id\nLIMIT :count";
+        String query = FIND_ALL_QUERY + "\nWHERE film_id = :film_id\nORDER BY useful DESC\nLIMIT :count";
         return jdbc.query(query,
                 new MapSqlParameterSource("film_id", filmId)
                         .addValue("count", count),
@@ -118,7 +118,7 @@ public class JdbcReviewRepository implements ReviewRepository {
 
     @Override
     public List<Review> findAll(int count) {
-        String query = FIND_ALL_QUERY + "\nLIMIT :count";
+        String query = FIND_ALL_QUERY + "\nORDER BY useful DESC\nLIMIT :count";
         return jdbc.query(query,
                 new MapSqlParameterSource("count", count),
                 JdbcReviewRepository::mapRowTo);
