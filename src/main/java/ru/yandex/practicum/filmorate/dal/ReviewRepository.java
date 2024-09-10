@@ -15,7 +15,7 @@ public interface ReviewRepository {
 
     Review create(Review review);
 
-    Review update(Review newReview);
+    void update(Review newReview);
 
     void deleteById(int id);
 
