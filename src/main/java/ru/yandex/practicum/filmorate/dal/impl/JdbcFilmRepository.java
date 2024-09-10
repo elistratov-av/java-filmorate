@@ -110,31 +110,32 @@ public class JdbcFilmRepository implements FilmRepository {
                 fd.director_id = d.director_id
             WHERE
             	d.director_id = :director_id
-            ORDER BY f.release_date""";
+            ORDER BY
+                f.release_date""";
     private static final String GET_DIRECTOR_FILMS_BY_LIKES = """
             SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name mpa_name,
                 g.genre_id, g.name genre_name, d.director_id, d.name director_name
-            FROM (
-            	SELECT film_id
-            	FROM
-            		likes l
-            	GROUP BY
-            		film_id
-            	ORDER BY
-            		COUNT(user_id) DESC) gf
-            JOIN films f ON
-            	gf.film_id = f.FILM_ID
-            LEFT JOIN film_genres fg ON
-            	f.film_id = fg.film_id
-            LEFT JOIN genres g ON
-            	fg.genre_id = g.genre_id
-            LEFT JOIN mpa m ON
-            	f.mpa_id = m.mpa_id
-            LEFT JOIN film_directors fd ON
+            FROM
+                films AS f
+            LEFT JOIN likes as l ON
+                f.film_id = l.film_id
+            LEFT JOIN mpa AS m ON
+                f.mpa_id = m.mpa_id
+            LEFT JOIN film_genres AS fg ON
+                f.film_id = fg.film_id
+            LEFT JOIN genres AS g ON
+                fg.genre_id = g.genre_id
+            LEFT JOIN film_directors AS fd ON
                 f.film_id = fd.film_id
-            LEFT JOIN directors d ON
+            LEFT JOIN directors AS d ON
                 fd.director_id = d.director_id
-            WHERE fd.director_id = :director_id""";
+            WHERE
+                fd.director_id = :director_id
+            GROUP BY
+                f.film_id
+            ORDER BY
+                COUNT(l.film_id) DESC
+            """;
     private static final String DELETE_FILM_BY_ID_QUERY = """
             DELETE FROM films
             WHERE film_id = :film_id""";

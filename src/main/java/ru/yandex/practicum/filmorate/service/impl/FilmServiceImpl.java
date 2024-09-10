@@ -153,7 +153,7 @@ public class FilmServiceImpl implements FilmService {
         } else if ("year".equalsIgnoreCase(sortBy)) {
             films = filmRepository.getFilmsByDirector(directorId);
         }
-        if (films == null) {
+        if (films == null || films.isEmpty()) {
             throw new NotFoundException("Режиссер с id = " + directorId + " не найден");
         }
         return films;
