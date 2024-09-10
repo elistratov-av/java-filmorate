@@ -86,7 +86,7 @@ public class JdbcFilmRepository implements FilmRepository {
             		) gf ON
             		f.film_id = gf.FILM_ID
             	ORDER BY count DESC
-            	LIMIT 1) fr
+            	LIMIT :max_count) fr
             LEFT JOIN film_genres fg ON
             	fr.film_id = fg.film_id
             LEFT JOIN genres g ON
@@ -495,7 +495,7 @@ public class JdbcFilmRepository implements FilmRepository {
         //WHERE g.genre_id = 1 AND YEAR(f.release_date) = 2003
         ArrayList<String> predicates = new ArrayList<>();
         if (genreId != null) {
-            predicates.add("g.genre_id = :genreId");
+            predicates.add("fr.film_id IN (SELECT film_id FROM film_genres WHERE genre_id = :genreId)");
         }
         if (year != null) {
             predicates.add("YEAR(fr.release_date) = :year");
