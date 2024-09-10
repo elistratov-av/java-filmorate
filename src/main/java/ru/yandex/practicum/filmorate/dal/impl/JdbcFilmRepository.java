@@ -57,7 +57,7 @@ public class JdbcFilmRepository implements FilmRepository {
             VALUES(:name, :desc, :rel_date, :duration, :mpa_id)""";
     private static final String UPDATE_QUERY = """
             UPDATE films
-            SET name = :name, description = :desc, release_date = :rel_date, duration = :duration, mpa_id = mpa_id
+            SET name = :name, description = :desc, release_date = :rel_date, duration = :duration, mpa_id = :mpa_id
             WHERE film_id = :film_id""";
     private static final String INSERT_FILM_GENRES_QUERY =
             "MERGE INTO film_genres (film_id, genre_id) VALUES(:film_id, :genre_id)";
