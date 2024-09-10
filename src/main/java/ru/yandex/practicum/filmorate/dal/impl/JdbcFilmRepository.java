@@ -72,25 +72,29 @@ public class JdbcFilmRepository implements FilmRepository {
     private static final String DELETE_LIKE_QUERY =
             "DELETE FROM likes WHERE film_id = :film_id AND user_id = :user_id";
     private static final String GET_TOP_FILMS = """
-            SELECT gf.count, f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name mpa_name,
-            	g.genre_id, g.name genre_name, d.director_id, d.name director_name
-            FROM films f
-            LEFT JOIN (
-            	SELECT film_id, COUNT(user_id) count
-            	FROM
-            		likes l
-            	GROUP BY
-            		film_id
-            	) gf ON
-            	f.film_id = gf.FILM_ID
+            SELECT fr.count, fr.film_id, fr.name, fr.description, fr.release_date, fr.duration, fr.mpa_id, m.name mpa_name,
+            		g.genre_id, g.name genre_name, d.director_id, d.name director_name\s
+            FROM (
+            	SELECT COALESCE(gf.count, 0) count, f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id
+            	FROM films f
+            	LEFT JOIN (
+            		SELECT film_id, COUNT(user_id) count
+            		FROM
+            			likes l
+            		GROUP BY
+            			film_id
+            		) gf ON
+            		f.film_id = gf.FILM_ID
+            	ORDER BY count DESC
+            	LIMIT 1) fr
             LEFT JOIN film_genres fg ON
-            	f.film_id = fg.film_id
+            	fr.film_id = fg.film_id
             LEFT JOIN genres g ON
             	fg.genre_id = g.genre_id
             LEFT JOIN mpa m ON
-            	f.mpa_id = m.mpa_id
+            	fr.mpa_id = m.mpa_id
             LEFT JOIN film_directors fd ON
-                f.film_id = fd.film_id
+                fr.film_id = fd.film_id
             LEFT JOIN directors d ON
                 fd.director_id = d.director_id""";
     private static final String GET_FILMS_BY_DIRECTOR_ID = """
@@ -481,9 +485,7 @@ public class JdbcFilmRepository implements FilmRepository {
 
     @Override
     public List<Film> getTopFilms(int maxCount) {
-        return jdbc.query(GET_TOP_FILMS
-                        + "\nORDER BY gf.count DESC"
-                        + "\nLIMIT :max_count",
+        return jdbc.query(GET_TOP_FILMS,
                 new MapSqlParameterSource("max_count", maxCount),
                 JdbcFilmRepository::mapSetToList);
     }
@@ -496,14 +498,12 @@ public class JdbcFilmRepository implements FilmRepository {
             predicates.add("g.genre_id = :genreId");
         }
         if (year != null) {
-            predicates.add("YEAR(f.release_date) = :year");
+            predicates.add("YEAR(fr.release_date) = :year");
         }
 
         String predicate = "\nWHERE " + String.join(" AND ", predicates);
         return jdbc.query(GET_TOP_FILMS
-                        + predicate
-                        + "\nORDER BY gf.count DESC"
-                        + "\nLIMIT :max_count",
+                        + predicate,
                 new MapSqlParameterSource("max_count", count)
                         .addValue("genreId", genreId)
                         .addValue("year", year),
@@ -582,4 +582,3 @@ public class JdbcFilmRepository implements FilmRepository {
 
     }
 }
-
