@@ -73,6 +73,7 @@ public class FilmController {
     public Collection<Film> getTopFilms(@RequestParam(defaultValue = "10") int count,
                                         @RequestParam(required = false) Integer genreId,
                                         @RequestParam(required = false) Integer year) {
+
         List<Film> topFilms;
         if (genreId != null || year != null) {
             topFilms = filmService.getTopFilms(count, genreId, year);
@@ -80,6 +81,7 @@ public class FilmController {
             topFilms = filmService.getTopFilms(count);
         }
         log.info("Получен список популярных фильмов: {} ", topFilms.size());
+
         return topFilms;
     }
 

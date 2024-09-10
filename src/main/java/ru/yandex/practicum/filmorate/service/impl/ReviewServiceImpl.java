@@ -65,8 +65,9 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     public Review update(Review newReview) {
         validate(newReview, true);
-        Review updatedReview = reviewRepository.update(newReview);
-        addReviewFeed(newReview.getUserId(), newReview.getReviewId(), Feed.Operation.UPDATE);
+        reviewRepository.update(newReview);
+        Review updatedReview = get(newReview.getReviewId());
+        addReviewFeed(updatedReview.getUserId(), newReview.getReviewId(), Feed.Operation.UPDATE);
         return updatedReview;
     }
 

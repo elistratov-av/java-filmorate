@@ -46,6 +46,9 @@ public class UserController {
     public User create(@Valid @RequestBody User user) {
         // проверяем выполнение необходимых условий
         userValidator.validate(user, false);
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
         user = userService.create(user);
         log.info("Создан пользователь: {}", user);
         return user;
@@ -101,8 +104,8 @@ public class UserController {
 
     @GetMapping("/{id}/recommendations")
     public Collection<Film> getRecommendedFilms(@PathVariable int id) {
-        List<Film> recommendedFilms = userService.getRecommendedFilms(id);
-        log.info("Получен список рекомендации для пользователя с id = \"{}\"", id);
-        return recommendedFilms;
+            List<Film> recommendedFilms = userService.getRecommendedFilms(id);
+            log.info("Получен список рекомендации для пользователя с id = \"{}\"", id);
+            return recommendedFilms;
     }
 }

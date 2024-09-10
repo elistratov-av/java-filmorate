@@ -34,7 +34,7 @@ public class JdbcReviewRepository implements ReviewRepository {
             VALUES(:content, :is_positive, :film_id, :user_id)""";
     private static final String UPDATE_QUERY = """
             UPDATE reviews
-            SET content = :content, is_positive = :is_positive, film_id = :film_id, user_id = :user_id
+            SET content = :content, is_positive = :is_positive
             WHERE review_id = :review_id""";
     private static final String DELETE_BY_ID_QUERY = "DELETE FROM reviews WHERE review_id = :review_id";
     private static final String DELETE_LIKES_BY_REVIEW_QUERY = "DELETE FROM review_likes WHERE review_id = :review_id";
@@ -109,7 +109,7 @@ public class JdbcReviewRepository implements ReviewRepository {
 
     @Override
     public List<Review> findByFilmId(int filmId, int count) {
-        String query = FIND_ALL_QUERY + "\nWHERE film_id = :film_id\nLIMIT :count";
+        String query = FIND_ALL_QUERY + "\nWHERE film_id = :film_id\nORDER BY useful DESC\nLIMIT :count";
         return jdbc.query(query,
                 new MapSqlParameterSource("film_id", filmId)
                         .addValue("count", count),
@@ -118,7 +118,7 @@ public class JdbcReviewRepository implements ReviewRepository {
 
     @Override
     public List<Review> findAll(int count) {
-        String query = FIND_ALL_QUERY + "\nLIMIT :count";
+        String query = FIND_ALL_QUERY + "\nORDER BY useful DESC\nLIMIT :count";
         return jdbc.query(query,
                 new MapSqlParameterSource("count", count),
                 JdbcReviewRepository::mapRowTo);
@@ -138,14 +138,11 @@ public class JdbcReviewRepository implements ReviewRepository {
     }
 
     @Override
-    public Review update(Review newReview) {
+    public void update(Review newReview) {
         jdbc.update(UPDATE_QUERY,
                 new MapSqlParameterSource("content", newReview.getContent())
                         .addValue("is_positive", newReview.getIsPositive())
-                        .addValue("film_id", newReview.getFilmId())
-                        .addValue("user_id", newReview.getUserId())
                         .addValue("review_id", newReview.getReviewId()));
-        return newReview;
     }
 
     @Override
