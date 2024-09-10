@@ -231,7 +231,7 @@ public class JdbcFilmRepository implements FilmRepository {
 
     private static final String GET_BY_USERS_IDS_QUERY = """
             SELECT l.user_id, f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name,
-                g.genre_id, g.name AS genre_name, d.director_id, d.name
+                g.genre_id, g.name AS genre_name, d.director_id, d.name AS director_name
             FROM
                 likes AS l
             INNER JOIN films AS f ON
@@ -246,7 +246,8 @@ public class JdbcFilmRepository implements FilmRepository {
                 f.film_id = fd.film_id
             LEFT JOIN directors AS d ON
                 fd.director_id = d.director_id
-            WHERE l.user_id IN (:users_ids)
+            WHERE
+                l.user_id IN (:users_ids)
             """;
 
     // endregion
