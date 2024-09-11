@@ -6,12 +6,25 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcOperations;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.FilmRepository;
-import ru.yandex.practicum.filmorate.model.*;
+import ru.yandex.practicum.filmorate.model.Director;
+import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 @Repository("jdbcFilmRepository")
 @RequiredArgsConstructor
@@ -338,7 +351,7 @@ public class JdbcFilmRepository implements FilmRepository {
         return new ArrayList<>(films.values());
     }
 
-    private static HashMap<Integer, List<Film>> mapSetToHashMap(ResultSet rs) throws SQLException {
+    private static Map<Integer, List<Film>> mapSetToHashMap(ResultSet rs) throws SQLException {
 
         HashMap<Integer, LinkedHashMap<Integer, Film>> userWithFilms = new LinkedHashMap<>();
         while (rs.next()) {
@@ -573,7 +586,7 @@ public class JdbcFilmRepository implements FilmRepository {
     }
 
     @Override
-    public HashMap<Integer, List<Film>> getLikedFilmsByUsersIds(Set<Integer> usersIds) {
+    public Map<Integer, List<Film>> getLikedFilmsByUsersIds(Set<Integer> usersIds) {
 
         return jdbc.query(GET_BY_USERS_IDS_QUERY,
                 new MapSqlParameterSource()

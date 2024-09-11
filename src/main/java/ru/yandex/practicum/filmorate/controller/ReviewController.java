@@ -24,7 +24,6 @@ import java.util.List;
 public class ReviewController {
     private final ReviewService reviewService;
 
-    // GET /reviews/{id}
     @GetMapping("/{id}")
     public Review get(@PathVariable int id) {
         Review review = reviewService.get(id);
@@ -32,7 +31,6 @@ public class ReviewController {
         return review;
     }
 
-    // GET /reviews?filmId={filmId}&count={count}
     @GetMapping
     public List<Review> findAll(@RequestParam(required = false) Integer filmId, @RequestParam(defaultValue = "10") int count) {
         List<Review> reviews = reviewService.findByFilmId(filmId, count);
@@ -40,7 +38,6 @@ public class ReviewController {
         return reviews;
     }
 
-    // POST /reviews
     @PostMapping
     public Review create(@Valid @RequestBody Review review) {
         review = reviewService.create(review);
@@ -48,7 +45,6 @@ public class ReviewController {
         return review;
     }
 
-    // PUT /reviews
     @PutMapping
     public Review update(@Valid @RequestBody Review newReview) {
         Review review = reviewService.update(newReview);
@@ -56,35 +52,30 @@ public class ReviewController {
         return review;
     }
 
-    // DELETE /reviews/{id}
     @DeleteMapping("/{id}")
     public void delete(@PathVariable int id) {
         reviewService.deleteById(id);
         log.info("Удален отзыв с id = \"{}\"", id);
     }
 
-    // PUT /reviews/{id}/like/{userId}
     @PutMapping("/{id}/like/{userId}")
     public void addLike(@PathVariable int id, @PathVariable int userId) {
         reviewService.addLike(id, userId);
         log.info("К отзыву с id = \"{}\" добавлен лайк пользователя с id = \"{}\"", id, userId);
     }
 
-    // PUT /reviews/{id}/dislike/{userId}
     @PutMapping("/{id}/dislike/{userId}")
     public void addDislike(@PathVariable int id, @PathVariable int userId) {
         reviewService.addDislike(id, userId);
         log.info("К отзыву с id = \"{}\" добавлен дизлайк пользователя с id = \"{}\"", id, userId);
     }
 
-    // DELETE /reviews/{id}/like/{userId}
     @DeleteMapping("/{id}/like/{userId}")
     public void deleteLike(@PathVariable int id, @PathVariable int userId) {
         reviewService.deleteLike(id, userId);
         log.info("У отзыва с id = \"{}\" удален лайк пользователя с id = \"{}\"", id, userId);
     }
 
-    // DELETE /reviews/{id}/dislike/{userId}
     @DeleteMapping("/{id}/dislike/{userId}")
     public void deleteDislike(@PathVariable int id, @PathVariable int userId) {
         reviewService.deleteDislike(id, userId);

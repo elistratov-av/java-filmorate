@@ -16,7 +16,6 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.service.impl.FilmValidator;
 
-import java.util.Collection;
 import java.util.List;
 
 @Slf4j
@@ -70,7 +69,7 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public Collection<Film> getTopFilms(@RequestParam(defaultValue = "10") int count,
+    public List<Film> getTopFilms(@RequestParam(defaultValue = "10") int count,
                                         @RequestParam(required = false) Integer genreId,
                                         @RequestParam(required = false) Integer year) {
 
@@ -86,14 +85,13 @@ public class FilmController {
     }
 
     @GetMapping("/director/{directorId}")
-    public Collection<Film> getFilmsByDirectorId(@PathVariable int directorId,
+    public List<Film> getFilmsByDirectorId(@PathVariable int directorId,
                                                  @RequestParam(value = "sortBy") String sortBy) {
         List<Film> directorFilms = filmService.getDirectorFilms(directorId, sortBy);
         log.info("Получены фильм режиссера с id: {} отсортированных по {}", directorId, sortBy);
         return directorFilms;
     }
 
-    // DELETE /films/{filmId}
     @DeleteMapping("/{filmId}")
     public void deleteFilm(@PathVariable int filmId) {
         filmService.deleteFilmById(filmId);
@@ -108,7 +106,7 @@ public class FilmController {
     }
 
     @GetMapping("/common")
-    public Collection<Film> getCommonFilms(@RequestParam(value = "userId") int userId,
+    public List<Film> getCommonFilms(@RequestParam(value = "userId") int userId,
                                            @RequestParam(value = "friendId") int friendId) {
         List<Film> commonFilms = filmService.getCommonFilms(userId, friendId);
         log.info("Получены общие фильмы пользователя id: {} с пользователем {}", userId, friendId);
