@@ -4,7 +4,6 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -43,5 +42,5 @@ public interface FilmRepository {
 
     Set<Integer> getFilmsLikedByUser(int userId);
 
-    Map<Integer, List<Film>> getLikedFilmsByUsersIds(Set<Integer> usersIdsThatLikedSameFilms);
+    List<Film> getLikedFilmsByUsersIds(Set<Integer> usersIdsThatLikedSameFilms);
 }
