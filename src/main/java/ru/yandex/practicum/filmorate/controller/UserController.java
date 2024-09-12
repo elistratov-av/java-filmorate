@@ -75,27 +75,26 @@ public class UserController {
     }
 
     @GetMapping("/{id}/friends")
-    public Collection<User> getFriends(@PathVariable int id) {
+    public List<User> getFriends(@PathVariable int id) {
         List<User> friends = userService.getFriends(id);
         log.info("Получен список друзей для пользователя с id = \"{}\"", id);
         return friends;
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
-    public Collection<User> getMutualFriends(@PathVariable int id, @PathVariable int otherId) {
+    public List<User> getMutualFriends(@PathVariable int id, @PathVariable int otherId) {
         List<User> friends = userService.getMutualFriends(id, otherId);
         log.info("Получен список общих друзей для пользователей с id = \"{}\" и otherId = \"{}\"", id, otherId);
         return friends;
     }
 
     @GetMapping("/{id}/feed")
-    public Collection<Feed> getFeed(@PathVariable int id) {
+    public List<Feed> getFeed(@PathVariable int id) {
         List<Feed> feed = userService.getFeed(id);
         log.info("Получен список последних событий на платформе друзей пользователя с id = \"{}\"", id);
         return feed;
     }
 
-    // DELETE /users/{userId}
     @DeleteMapping("/{userId}")
     public void deleteUser(@PathVariable int userId) {
         userService.deleteUserById(userId);
@@ -103,7 +102,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}/recommendations")
-    public Collection<Film> getRecommendedFilms(@PathVariable int id) {
+    public List<Film> getRecommendedFilms(@PathVariable int id) {
             List<Film> recommendedFilms = userService.getRecommendedFilms(id);
             log.info("Получен список рекомендации для пользователя с id = \"{}\"", id);
             return recommendedFilms;

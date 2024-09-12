@@ -6,12 +6,23 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcOperations;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.FilmRepository;
-import ru.yandex.practicum.filmorate.model.*;
+import ru.yandex.practicum.filmorate.model.Director;
+import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 @Repository("jdbcFilmRepository")
 @RequiredArgsConstructor
@@ -234,7 +245,7 @@ public class JdbcFilmRepository implements FilmRepository {
                 l.user_id = :user_id""";
 
     private static final String GET_BY_USERS_IDS_QUERY = """
-            SELECT l.user_id, f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name,
+            SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name AS mpa_name,
                 g.genre_id, g.name AS genre_name, d.director_id, d.name AS director_name
             FROM
                 likes AS l
@@ -336,40 +347,6 @@ public class JdbcFilmRepository implements FilmRepository {
             }
         }
         return new ArrayList<>(films.values());
-    }
-
-    private static HashMap<Integer, List<Film>> mapSetToHashMap(ResultSet rs) throws SQLException {
-
-        HashMap<Integer, LinkedHashMap<Integer, Film>> userWithFilms = new LinkedHashMap<>();
-        while (rs.next()) {
-            Integer userId = rs.getInt("user_id");
-            Integer filmId = rs.getInt("film_id");
-
-            userWithFilms.putIfAbsent(userId, new LinkedHashMap<>());
-
-            Film film = userWithFilms.get(userId).get(filmId);
-            if (film == null) {
-                film = mapRowTo(rs);
-                userWithFilms.get(userId).put(film.getId(), film);
-                film.setGenres(new LinkedHashSet<>());
-                film.setDirectors(new LinkedHashSet<>());
-            }
-            Genre genre = mapRowToGenre(rs);
-            if (genre != null) {
-                film.getGenres().add(genre);
-            }
-            Director director = mapRowToDirector(rs);
-            if (director != null) {
-                film.getDirectors().add(director);
-            }
-        }
-        HashMap<Integer, List<Film>> resultMap = new HashMap<>();
-        for (Map.Entry<Integer, LinkedHashMap<Integer, Film>> entry : userWithFilms.entrySet()) {
-            // Преобразуем LinkedHashMap в List и добавляем в resultMap
-            resultMap.put(entry.getKey(), new ArrayList<>(entry.getValue().values()));
-        }
-
-        return resultMap;
     }
 
     private static Set<Integer> mapSetToFilmIds(ResultSet rs) throws SQLException {
@@ -573,12 +550,12 @@ public class JdbcFilmRepository implements FilmRepository {
     }
 
     @Override
-    public HashMap<Integer, List<Film>> getLikedFilmsByUsersIds(Set<Integer> usersIds) {
+    public List<Film> getLikedFilmsByUsersIds(Set<Integer> usersIds) {
 
         return jdbc.query(GET_BY_USERS_IDS_QUERY,
                 new MapSqlParameterSource()
                         .addValue("users_ids", usersIds),
-                JdbcFilmRepository::mapSetToHashMap);
+                JdbcFilmRepository::mapSetToList);
 
     }
 }

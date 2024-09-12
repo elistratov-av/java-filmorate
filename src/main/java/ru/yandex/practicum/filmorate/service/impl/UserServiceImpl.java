@@ -14,7 +14,9 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -122,20 +124,11 @@ public class UserServiceImpl implements UserService {
         // Пользователи, которые поставили лайк те же самые фильмы, что и пользователь X
         Set<Integer> usersIdsThatLikedSameFilms = userRepository.getUsersWithSameLikes(filmsIdsLikedByUser);
 
-        HashMap<Integer, List<Film>> foundUsersAllLikedFilms = filmRepository.getLikedFilmsByUsersIds(usersIdsThatLikedSameFilms);
+        Set<Film> foundUsersAllLikedFilms = new HashSet<>(filmRepository.getLikedFilmsByUsersIds(usersIdsThatLikedSameFilms));
 
-        // Фильмы, которые не поставили лайк пользователь X, делавший запрос
-        List<Film> recommendedFilms = new ArrayList<>();
+        return foundUsersAllLikedFilms.stream()
+                .filter(film -> !filmsIdsLikedByUser.contains(film.getId()))
+                .toList();
 
-        for (Map.Entry<Integer, List<Film>> entry : foundUsersAllLikedFilms.entrySet()) {
-            List<Film> likedByOtherUser = entry.getValue();
-
-            for (Film film : likedByOtherUser) {
-                if (!filmsIdsLikedByUser.contains(film.getId())) {
-                    recommendedFilms.add(film);
-                }
-            }
-        }
-        return recommendedFilms;
     }
 }

@@ -16,7 +16,6 @@ import java.util.List;
 public class DirectorController {
     private final DirectorService directorService;
 
-    // GET /directors
     @GetMapping
     public List<Director> findAll() {
         List<Director> directors = directorService.findAll();
@@ -24,7 +23,6 @@ public class DirectorController {
         return directors;
     }
 
-    // GET /directors/{id}
     @GetMapping("/{id}")
     public Director get(@PathVariable int id) {
         Director director = directorService.get(id);
@@ -32,7 +30,6 @@ public class DirectorController {
         return director;
     }
 
-    // POST /directors
     @PostMapping
     public Director create(@Valid @RequestBody Director director) {
         director = directorService.create(director);
@@ -40,7 +37,6 @@ public class DirectorController {
         return director;
     }
 
-    // PUT /directors
     @PutMapping
     public Director update(@Valid @RequestBody Director director) {
         director = directorService.update(director);
@@ -48,7 +44,6 @@ public class DirectorController {
         return director;
     }
 
-    // DELETE /directors/{id}
     @DeleteMapping("/{id}")
     public void delete(@PathVariable int id) {
         directorService.delete(id);
