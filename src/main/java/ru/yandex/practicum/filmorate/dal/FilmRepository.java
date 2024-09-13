@@ -5,6 +5,7 @@ import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface FilmRepository {
     Optional<Film> get(Integer id);
@@ -20,4 +21,26 @@ public interface FilmRepository {
     void deleteLike(Film film, User user);
 
     List<Film> getTopFilms(int maxCount);
+
+    List<Film> getTopFilms(int count, Integer genreId, Integer year);
+
+    List<Film> getFilmsByDirector(Integer directorId);
+
+    List<Film> getDirectorFilmsByLikes(Integer directorId);
+
+    void deleteFilmDirectors(int filmId);
+
+    void deleteFilmById(int filmId);
+
+    void deleteFilmLikes(int filmId);
+
+    void deleteFilmGenres(int filmId);
+
+    List<Film> searchFilms(String query, String by);
+
+    List<Film> getCommonFilms(User user, User friend);
+
+    Set<Integer> getFilmsLikedByUser(int userId);
+
+    List<Film> getLikedFilmsByUsersIds(Set<Integer> usersIdsThatLikedSameFilms);
 }

@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.practicum.filmorate.model.Mpa;
 import ru.yandex.practicum.filmorate.service.MpaService;
 
-import java.util.Collection;
 import java.util.List;
 
 @Slf4j
@@ -27,7 +26,7 @@ public class MpaController {
     }
 
     @GetMapping
-    public Collection<Mpa> findAll() {
+    public List<Mpa> findAll() {
         List<Mpa> mpas = mpaService.findAll();
         log.info("Получен список рейтингов");
         return mpas;

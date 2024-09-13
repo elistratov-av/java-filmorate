@@ -1,18 +1,13 @@
-package ru.yandex.practicum.filmorate.service;
+package ru.yandex.practicum.filmorate.service.impl;
 
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.dal.FilmRepository;
-import ru.yandex.practicum.filmorate.dal.GenreRepository;
-import ru.yandex.practicum.filmorate.dal.MpaRepository;
-import ru.yandex.practicum.filmorate.dal.UserRepository;
+import ru.yandex.practicum.filmorate.dal.*;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.Mpa;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.*;
+import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -26,6 +21,9 @@ public class FilmServiceImpl implements FilmService {
     private final UserRepository userRepository;
     private final GenreRepository genreRepository;
     private final MpaRepository mpaRepository;
+    private final FeedRepository feedRepository;
+    private final DirectorRepository directorRepository;
+    private final ReviewRepository reviewRepository;
 
     @Override
     public Film get(int id) {
@@ -56,6 +54,15 @@ public class FilmServiceImpl implements FilmService {
             }
         }
 
+        List<Director> directors = null;
+        if (film.getDirectors() != null) {
+            final List<Integer> directorIds = film.getDirectors().stream().map(Director::getId).toList();
+            directors = directorRepository.getByIds(directorIds);
+            if (directorIds.size() != directors.size()) {
+                throw new ValidationException("Режиссеры не найдены");
+            }
+        }
+
         return filmRepository.create(Film.builder()
                 .name(film.getName())
                 .description(film.getDescription())
@@ -63,6 +70,7 @@ public class FilmServiceImpl implements FilmService {
                 .duration(film.getDuration())
                 .mpa(mpa)
                 .genres(genres != null ? new LinkedHashSet<>(genres) : null)
+                .directors(directors != null ? new LinkedHashSet<>(directors) : null)
                 .build());
     }
 
@@ -78,7 +86,7 @@ public class FilmServiceImpl implements FilmService {
                     .orElseThrow(() -> new ValidationException("Рейтинг с id = " + mpaId + " не найден"));
         }
 
-        List<Genre> genres = null;
+        List<Genre> genres = List.of();
         if (newFilm.getGenres() != null) {
             final List<Integer> genreIds = newFilm.getGenres().stream().map(Genre::getId).toList();
             genres = genreRepository.getByIds(genreIds);
@@ -87,12 +95,22 @@ public class FilmServiceImpl implements FilmService {
             }
         }
 
+        List<Director> directors = List.of();
+        if (newFilm.getDirectors() != null) {
+            final List<Integer> directorIds = newFilm.getDirectors().stream().map(Director::getId).toList();
+            directors = directorRepository.getByIds(directorIds);
+            if (directorIds.size() != directors.size()) {
+                throw new ValidationException("Режиссеры не найдены");
+            }
+        }
+
         f.setName(newFilm.getName());
         f.setDescription(newFilm.getDescription());
         f.setReleaseDate(newFilm.getReleaseDate());
         f.setDuration(newFilm.getDuration());
         f.setMpa(mpa);
-        f.setGenres(genres != null ? new LinkedHashSet<>(genres) : null);
+        f.setGenres(new LinkedHashSet<>(genres));
+        f.setDirectors(new LinkedHashSet<>(directors));
 
         return filmRepository.update(f);
     }
@@ -104,6 +122,7 @@ public class FilmServiceImpl implements FilmService {
         User user = userRepository.get(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден"));
         filmRepository.addLike(film, user);
+        addLikeFeed(userId, filmId, Feed.Operation.ADD);
     }
 
     @Override
@@ -113,10 +132,61 @@ public class FilmServiceImpl implements FilmService {
         User user = userRepository.get(userId)
                 .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден"));
         filmRepository.deleteLike(film, user);
+        addLikeFeed(userId, filmId, Feed.Operation.REMOVE);
     }
 
     @Override
     public List<Film> getTopFilms(int maxCount) {
         return filmRepository.getTopFilms(maxCount);
+    }
+
+    @Override
+    public List<Film> getTopFilms(int count, Integer genreId, Integer year) {
+        return filmRepository.getTopFilms(count, genreId, year);
+    }
+
+    @Override
+    public List<Film> getDirectorFilms(int directorId, String sortBy) {
+        List<Film> films = null;
+        if ("likes".equalsIgnoreCase(sortBy)) {
+            films = filmRepository.getDirectorFilmsByLikes(directorId);
+        } else if ("year".equalsIgnoreCase(sortBy)) {
+            films = filmRepository.getFilmsByDirector(directorId);
+        }
+        if (films == null || films.isEmpty()) {
+            throw new NotFoundException("Режиссер с id = " + directorId + " не найден");
+        }
+        return films;
+    }
+
+    @Override
+    public List<Film> getCommonFilms(int userId, int friendId) {
+        User user = userRepository.get(userId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id = " + userId + " не найден"));
+        User friend = userRepository.get(friendId)
+                .orElseThrow(() -> new NotFoundException("Пользователь с id = " + friendId + " не найден"));
+        return filmRepository.getCommonFilms(user, friend);
+    }
+
+    private void addLikeFeed(Integer userId, Integer filmId, Feed.Operation operation) {
+        feedRepository.create(new Feed(userId, filmId, Feed.EventType.LIKE, operation));
+    }
+
+    @Override
+    public void deleteFilmById(int filmId) {
+        filmRepository.get(filmId)
+                .orElseThrow(() -> new NotFoundException("Фильм с id = " + filmId + " не найден"));
+
+        filmRepository.deleteFilmDirectors(filmId);
+        filmRepository.deleteFilmLikes(filmId);
+        filmRepository.deleteFilmGenres(filmId);
+        reviewRepository.deleteFilmReviewLikes(filmId);
+        reviewRepository.deleteFilmReviews(filmId);
+        filmRepository.deleteFilmById(filmId);
+    }
+
+    @Override
+    public List<Film> searchFilms(String query, String by) {
+        return filmRepository.searchFilms(query, by);
     }
 }

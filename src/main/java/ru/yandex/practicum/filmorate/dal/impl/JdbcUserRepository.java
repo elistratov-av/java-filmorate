@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.dal;
+package ru.yandex.practicum.filmorate.dal.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -6,13 +6,16 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcOperations;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.dal.UserRepository;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository("jdbcUserRepository")
 @RequiredArgsConstructor
@@ -58,6 +61,29 @@ public class JdbcUserRepository implements UserRepository {
             		friends fr3
             	WHERE
             		fr3.user_id = :user2_id)""";
+    private static final String DELETE_USER_BY_ID_QUERY = """
+            DELETE FROM users
+            WHERE user_id = :user_id""";
+    private static final String DELETE_USER_LIKES_QUERY = """
+            DELETE FROM likes
+            WHERE user_id = :user_id""";
+    private static final String DELETE_USER_FRIENDS_QUERY = """
+            DELETE FROM friends
+            WHERE user_id = :user_id OR friend_id = :user_id""";
+    private static final String GET_USERS_WITH_COMMON_FILMS_BY_FILMS = """
+            SELECT l.user_id
+            FROM
+                likes AS l
+            INNER JOIN users AS u ON
+                l.user_id = u.user_id
+            WHERE
+                l.film_id IN (:films_id)
+            GROUP BY
+                l.user_id
+            ORDER
+                BY COUNT(l.film_id) DESC
+            LIMIT 10
+            """;
 
     // endregion
 
@@ -72,6 +98,16 @@ public class JdbcUserRepository implements UserRepository {
                 .name(rs.getString("user_name"))
                 .birthday(birthday != null ? birthday.toLocalDate() : null)
                 .build();
+    }
+
+    private static Set<Integer> mapSetToUserIds(ResultSet rs) throws SQLException {
+        Set<Integer> usersIds = new HashSet<>();
+
+        while (rs.next()) {
+            Integer userId = rs.getInt("user_id");
+            usersIds.add(userId);
+        }
+        return usersIds;
     }
 
     // endregion
@@ -146,5 +182,31 @@ public class JdbcUserRepository implements UserRepository {
                 new MapSqlParameterSource("user1_id", user.getId())
                         .addValue("user2_id", other.getId()),
                 JdbcUserRepository::mapRowTo);
+    }
+
+    @Override
+    public void deleteUserById(int userId) {
+        jdbc.update(DELETE_USER_BY_ID_QUERY,
+                new MapSqlParameterSource("user_id", userId));
+    }
+
+    @Override
+    public void deleteUserLikes(int userId) {
+        jdbc.update(DELETE_USER_LIKES_QUERY,
+                new MapSqlParameterSource("user_id", userId));
+    }
+
+    @Override
+    public void deleteUserFriends(int userId) {
+        jdbc.update(DELETE_USER_FRIENDS_QUERY,
+                new MapSqlParameterSource("user_id", userId));
+    }
+
+    @Override
+    public Set<Integer> getUsersWithSameLikes(Set<Integer> films) {
+
+        return jdbc.query(GET_USERS_WITH_COMMON_FILMS_BY_FILMS,
+                new MapSqlParameterSource("films_id", films),
+                JdbcUserRepository::mapSetToUserIds);
     }
 }

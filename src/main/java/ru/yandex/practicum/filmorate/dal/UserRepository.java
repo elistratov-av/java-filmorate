@@ -4,6 +4,7 @@ import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface UserRepository {
     Optional<User> get(Integer id);
@@ -21,4 +22,12 @@ public interface UserRepository {
     List<User> getFriends(User user);
 
     List<User> getMutualFriends(User user, User other);
+
+    void deleteUserById(int userId);
+
+    void deleteUserLikes(int userId);
+
+    void deleteUserFriends(int userId);
+
+    Set<Integer> getUsersWithSameLikes(Set<Integer> filmsIdsLikedByUser);
 }

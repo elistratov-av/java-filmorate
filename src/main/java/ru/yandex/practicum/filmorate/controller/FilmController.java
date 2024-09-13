@@ -14,9 +14,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
-import ru.yandex.practicum.filmorate.service.FilmValidator;
+import ru.yandex.practicum.filmorate.service.impl.FilmValidator;
 
-import java.util.Collection;
 import java.util.List;
 
 @Slf4j
@@ -70,9 +69,47 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public Collection<Film> getTopFilms(@RequestParam(defaultValue = "10") int count) {
-        List<Film> topFilms = filmService.getTopFilms(count);
-        log.info("Получен список популярных фильмов: {} ", count);
+    public List<Film> getTopFilms(@RequestParam(defaultValue = "10") int count,
+                                        @RequestParam(required = false) Integer genreId,
+                                        @RequestParam(required = false) Integer year) {
+
+        List<Film> topFilms;
+        if (genreId != null || year != null) {
+            topFilms = filmService.getTopFilms(count, genreId, year);
+        } else {
+            topFilms = filmService.getTopFilms(count);
+        }
+        log.info("Получен список популярных фильмов: {} ", topFilms.size());
+
         return topFilms;
+    }
+
+    @GetMapping("/director/{directorId}")
+    public List<Film> getFilmsByDirectorId(@PathVariable int directorId,
+                                                 @RequestParam(value = "sortBy") String sortBy) {
+        List<Film> directorFilms = filmService.getDirectorFilms(directorId, sortBy);
+        log.info("Получены фильм режиссера с id: {} отсортированных по {}", directorId, sortBy);
+        return directorFilms;
+    }
+
+    @DeleteMapping("/{filmId}")
+    public void deleteFilm(@PathVariable int filmId) {
+        filmService.deleteFilmById(filmId);
+        log.info("Фильм с id = \"{}\" удален", filmId);
+    }
+
+    @GetMapping("/search")
+    public List<Film> searchFilms(@RequestParam String query, @RequestParam String by) {
+        List<Film> films = filmService.searchFilms(query, by);
+        log.info("Поиск фильмов по запросу: {} и параметру: {}", query, by);
+        return films;
+    }
+
+    @GetMapping("/common")
+    public List<Film> getCommonFilms(@RequestParam(value = "userId") int userId,
+                                           @RequestParam(value = "friendId") int friendId) {
+        List<Film> commonFilms = filmService.getCommonFilms(userId, friendId);
+        log.info("Получены общие фильмы пользователя id: {} с пользователем {}", userId, friendId);
+        return commonFilms;
     }
 }

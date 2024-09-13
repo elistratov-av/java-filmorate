@@ -11,9 +11,11 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import ru.yandex.practicum.filmorate.model.Feed;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.UserService;
-import ru.yandex.practicum.filmorate.service.UserValidator;
+import ru.yandex.practicum.filmorate.service.impl.UserValidator;
 
 import java.util.Collection;
 import java.util.List;
@@ -44,6 +46,9 @@ public class UserController {
     public User create(@Valid @RequestBody User user) {
         // проверяем выполнение необходимых условий
         userValidator.validate(user, false);
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
         user = userService.create(user);
         log.info("Создан пользователь: {}", user);
         return user;
@@ -70,16 +75,36 @@ public class UserController {
     }
 
     @GetMapping("/{id}/friends")
-    public Collection<User> getFriends(@PathVariable int id) {
+    public List<User> getFriends(@PathVariable int id) {
         List<User> friends = userService.getFriends(id);
         log.info("Получен список друзей для пользователя с id = \"{}\"", id);
         return friends;
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
-    public Collection<User> getMutualFriends(@PathVariable int id, @PathVariable int otherId) {
+    public List<User> getMutualFriends(@PathVariable int id, @PathVariable int otherId) {
         List<User> friends = userService.getMutualFriends(id, otherId);
         log.info("Получен список общих друзей для пользователей с id = \"{}\" и otherId = \"{}\"", id, otherId);
         return friends;
+    }
+
+    @GetMapping("/{id}/feed")
+    public List<Feed> getFeed(@PathVariable int id) {
+        List<Feed> feed = userService.getFeed(id);
+        log.info("Получен список последних событий на платформе друзей пользователя с id = \"{}\"", id);
+        return feed;
+    }
+
+    @DeleteMapping("/{userId}")
+    public void deleteUser(@PathVariable int userId) {
+        userService.deleteUserById(userId);
+        log.info("Пользователь с id = \"{}\" удален", userId);
+    }
+
+    @GetMapping("/{id}/recommendations")
+    public List<Film> getRecommendedFilms(@PathVariable int id) {
+            List<Film> recommendedFilms = userService.getRecommendedFilms(id);
+            log.info("Получен список рекомендации для пользователя с id = \"{}\"", id);
+            return recommendedFilms;
     }
 }
